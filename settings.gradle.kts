@@ -13,9 +13,6 @@ pluginManagement {
 }
 
 rootProject.name = "nodeorb"
-include("admin-panel", "autonomous-ops", "common-core", "customs-service", "cyber-resilience",
-        "driver-app", "driver-service", "fms-service", "freight-marketplace",
-        "geography-service", "integration-service", "notification-service", "oms-service",
-        "order-service", "payload-service", "rating-service", "reverse-logistics",
-        "route-service", "scm-audit", "scm-data-protection", "scm-iam",
-        "tms-service", "tracking-service", "transport-platform", "wms-service", "yms-service")
+include("admin-backend", "admin-frontend", "autonomous-ops", "customs-service",
+        "fms-service", "freight-marketplace", "oms-service",
+        "scm-service", "tms-service", "transport-platform", "wms-service")

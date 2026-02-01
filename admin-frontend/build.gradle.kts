@@ -1,6 +1,6 @@
 plugins {
-    kotlin("multiplatform") version "2.0.21"
-    kotlin("plugin.serialization") version "2.0.21"
+    kotlin("multiplatform") version "2.3.0"
+    kotlin("plugin.serialization") version "2.3.0"
     id("com.android.application") version "8.2.2"
     id("org.jetbrains.compose") version "1.6.11"
     id("org.jetbrains.kotlinx.kover") version "0.7.4"
@@ -81,13 +81,13 @@ kotlin {
 }
 
 android {
-    namespace = "com.logi.admin.kmp"
+    namespace = "com.logistics.admin.frontend"
     compileSdk = 34
     
     sourceSets["main"].manifest.srcFile("src/androidMain/AndroidManifest.xml")
     
     defaultConfig {
-        applicationId = "com.logi.admin.kmp"
+        applicationId = "com.logistics.admin.frontend"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -110,11 +110,11 @@ android {
 
 compose.desktop {
     application {
-        mainClass = "com.logi.admin.kmp.MainKt"
+        mainClass = "com.logistics.admin.frontend.MainKt"
         
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "LogisticsAdminKMP"
+            packageName = "LogisticsAdminFrontend"
             packageVersion = "1.0.0"
             
             windows {
@@ -123,7 +123,7 @@ compose.desktop {
             }
             
             macOS {
-                bundleID = "com.logi.admin.kmp"
+                bundleID = "com.logistics.admin.frontend"
             }
         }
     }

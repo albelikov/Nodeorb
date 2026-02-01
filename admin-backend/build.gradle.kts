@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.spring")
-    kotlin("plugin.jpa")
+    kotlin("jvm") version "2.3.0"
+    kotlin("plugin.spring") version "2.3.0"
+    kotlin("plugin.jpa") version "2.3.0"
     id("org.springframework.boot")
     id("io.spring.dependency-management")
 }
@@ -16,7 +16,7 @@ dependencyManagement {
 }
 
 springBoot {
-    mainClass.set("com.nodeorb.admin.NodeorbAdminApplicationKt")
+    mainClass.set("logistics.admin.AdminPanelApplicationKt")
 }
 
 dependencies {

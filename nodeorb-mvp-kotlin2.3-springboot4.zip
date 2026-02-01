@@ -1,0 +1,363 @@
+plugins {
+    id("org.jetbrains.kotlin.jvm") version "2.3.0"
+    id("org.jetbrains.kotlin.plugin.spring") version "2.3.0"
+    id("org.jetbrains.kotlin.plugin.jpa") version "2.3.0"
+    id("org.springframework.boot") version "4.0.2"
+    id("io.spring.dependency-management") version "1.1.4"
+}
+
+allprojects {
+    group = "com.nodeorb"
+    version = "1.0.0"
+}
+
+subprojects {
+    apply(plugin = "org.springframework.boot")
+    apply(plugin = "io.spring.dependency-management")
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    
+    repositories {
+        mavenCentral()
+    }
+    
+    dependencies {
+        "implementation"("org.jetbrains.kotlin:kotlin-reflect")
+        "implementation"("org.jetbrains.kotlin:kotlin-stdlib")
+    }
+}version: '3.8'
+
+services:
+  # PostgreSQL Database (Version 18)
+  postgres-primary:
+    image: postgres:18-alpine
+    container_name: nodeorb-postgres-primary
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: nodeorb
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_primary_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nodeorb-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: nodeorb-redis
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nodeorb-network
+
+  # Keycloak for authentication
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.0
+    container_name: nodeorb-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-primary:5432/nodeorb
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      KC_HOSTNAME_STRICT: false
+      KC_PROXY: edge
+    command: start-dev
+    ports:
+      - "8180:8080"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.0\r\n' >&3;timeout 1 cat <&3 | grep -q '200 OK' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - nodeorb-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  # MQTT Broker for IoT
+  emqx:
+    image: emqx:5.3-alpine
+    container_name: nodeorb-emqx
+    environment:
+      EMQX_DASHBOARD__DEFAULT_USER: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_PASSWORD:-admin}
+    ports:
+      - "1883:1883"  # MQTT
+      - "8083:8083"  # MQTT over WebSocket
+      - "18083:18083"  # Dashboard
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18083/api/v4/nodes"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nodeorb-network
+
+  # Elasticsearch for logging
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: nodeorb-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - nodeorb-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # Kibana for visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    container_name: nodeorb-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - nodeorb-network
+
+  # Grafana for monitoring
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: nodeorb-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - nodeorb-network
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: nodeorb-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    volumes:
+      - prometheus_data:/prometheus
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - nodeorb-network
+
+  # Zipkin for distributed tracing
+  zipkin:
+    image: openzipkin/zipkin:3.3
+    container_name: nodeorb-zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - nodeorb-network
+
+volumes:
+  postgres_primary_data:
+  redis_data:
+  emqx_data:
+  emqx_log:
+  elasticsearch_data:
+  grafana_data:
+  prometheus_data:
+
+networks:
+  nodeorb-network:
+    driver: bridgeorg.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configureondemand=true
+org.gradle.version=9.3.0
+kotlin.code.style=official
+# Nodeorb - Логистическая Экосистема 
+
+## Описание проекта
+Nodeorb - это современная логистическая экосистема, поддерживающая коммерческие операции Система интегрирует беспилотные транспортные средства, дроны, автоматизацию складов и комплексное соответствие требованиям безопасности.
+
+## Архитектура
+
+### Микросервисная архитектура
+- Каждый сервис развертывается независимо
+- Использование Kubernetes для оркестрации
+- Канареечные развертывания для минимизации рисков
+- Коммуникация через REST/gRPC и шину событий Kafka
+
+## Технологический стек
+- **Бекенд**: Kotlin/Java для микросервисов
+- **Кроссплатформенность**: Kotlin Multiplatform для мобильных/десктоп приложений
+- **Фронтенд**: React/Vue для веб-дашбордов
+- **Инфраструктура**: Kubernetes, Docker, GovCloud (AWS/Azure)
+- **Очередь сообщений**: Apache Kafka
+- **Базы данных**: PostgreSQL, PostGIS для геопространственных данных
+- **Интеграция**: REST, gRPC, EDI (EDIFACT, XML)
+
+## Основные сервисы
+
+### 1. admin-backend - Административная панель (бекенд)
+Управление пользователями, мониторинг системы, настройки
+
+### 2. admin-frontend - Административная панель (фронтенд)
+Кроссплатформенное приложение для администрирования
+
+### 3. autonomous-ops - Автономные операции
+AI/ML для автоматического принятия решений в логистике
+
+### 4. customs-service - Таможенный сервис
+Интеграция с таможенными органами и оформление деклараций
+
+### 5. fms-service - Управление флотом
+Мониторинг транспорта в реальном времени, IoT интеграция
+
+### 6. freight-marketplace - Грузовая биржа
+Blockchain-платформа для сопоставления грузов и транспорта
+
+### 7. oms-service - Управление заказами
+Полный жизненный цикл заказов в логистике
+
+### 8. scm-service - Безопасность и комплаенс
+Централизованное управление безопасностью и аудитом
+
+### 9. tms-service - Управление транспортом
+Планирование маршрутов с учетом геоограничений
+
+### 10. transport-platform - Транспортная платформа
+Управление мультимодальными перевозками
+
+### 11. wms-service - Управление складом
+Складские операции с YMS и обратной логистикой
+
+## Сборка и запуск
+
+### Собрать все сервисы
+```bash
+./gradlew build
+```
+
+### Запустить конкретный сервис
+```bash
+cd service-name && ./gradlew bootRun
+```
+
+### Запуск в Docker
+```bash
+docker-compose up -d
+```
+
+## Требования к безопасности
+- Все конечные точки требуют аутентификации и авторизации
+- Реализация шифрования FIPS 140-2
+- Использование mTLS для сервис-сервис коммуникации
+- Принцип наименьших привилегий
+- Логирование всех попыток доступа и изменений данных
+
+## Соответствие стандартам
+- **US**: FedRAMP, CMMC Level 3, NIST 800-171, DFARS, ITAR/EAR
+- **EU**: GDPR, CSRD, Digital Transport Law, Ecodesign Directive
+- Реализация DLP (Data Loss Prevention)
+- Поддержка CUI (Controlled Unclassified Information)
+
+## Режимы работы
+### 1. Коммерческий режим
+Стандартные коммерческие операции
+
+### 2. Режим стратегической устойчивости
+Правительственные/аварийные операции с приоритетом
+
+### Переключение режимов
+- UI четко показывает текущий режим
+- Активация стратегического режима требует повышенных привилегий
+- Стратегический режим может переопределять коммерческие операции
+
+## Системные требования
+- Kubernetes 1.25+
+- Docker 20.10+
+- Java 17+
+- PostgreSQL 14+
+- Apache Kafka 3.0+
+
+## Разработка
+### Ветки
+- `main`: готовый к продакшену код
+- `develop`: ветка интеграции
+- `feature/*`: новые функции
+- `hotfix/*`: срочные исправления
+- `release/*`: подготовка релиза
+
+### Тестирование
+- Юнит-тесты для бизнес-логики
+- Интеграционные тесты для взаимодействия сервисов
+- E2E тесты для критических пользовательских сценариев
+- Тесты безопасности для аутентификации/авторизации
+
+## Контакты
+По вопросам:
+- Архитектуры: обратитесь к архитектору решения
+- Безопасности: обратитесь в команду безопасности / SOC
+- Соответствия: обратитесь к офицеру соответствия
+- DevOps: обратитесь в платформенную команду
+
+---
+
+**Примечание**: Эта система работает с технологиями двойного назначения. Все участники должны понимать ограничения ITAR/EAR и поддерживать соответствующие допуски для классифицированной работы.

@@ -1,0 +1,153 @@
+Configuration on demand is an incubating feature.gradle-version 8.5
+
+> Configure project :admin-panel
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:7:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:8:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:9:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:12:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:13:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:14:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:15:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:16:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:17:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:20:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:21:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:24:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:25:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:26:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:29:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:32:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:33:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:36:5: Unresolved reference: implementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:39:5: Unresolved reference: testImplementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:40:5: Unresolved reference: testImplementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:41:5: Unresolved reference: testImplementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:42:5: Unresolved reference: testImplementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:43:5: Unresolved reference: testImplementation
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:46:1: Expression 'application' cannot be invoked as a function. The function 'invoke()' is not found
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:46:1: Unresolved reference. None of the following candidates is applicable because of receiver type mismatch:
+public val PluginDependenciesSpec.application: PluginDependencySpec defined in org.gradle.kotlin.dsl
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:47:5: Unresolved reference: mainClass
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:51:5: Unresolved reference: archiveFileName
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:55:5: Unresolved reference: kotlinOptions
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:56:9: Unresolved reference: jvmTarget
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:57:9: Unresolved reference: freeCompilerArgs
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:64:1: Unresolved reference: springBoot
+e: file:///C:/Ecosystem_logistics/Logi/admin-panel/build.gradle.kts:65:5: Unresolved reference: buildInfo
+
+FAILURE: Build failed with an exception.
+
+* Where:
+Build file 'C:\Ecosystem_logistics\Logi\admin-panel\build.gradle.kts' line: 7
+
+* What went wrong:
+Script compilation errors:
+
+  Line 07:     implementation(project(":scm-iam"))
+               ^ Unresolved reference: implementation
+
+  Line 08:     implementation(project(":scm-audit"))
+               ^ Unresolved reference: implementation
+
+  Line 09:     implementation(project(":scm-data-protection"))
+               ^ Unresolved reference: implementation
+
+  Line 12:     implementation("org.springframework.boot:spring-boot-starter-web")
+               ^ Unresolved reference: implementation
+
+  Line 13:     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
+               ^ Unresolved reference: implementation
+
+  Line 14:     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+               ^ Unresolved reference: implementation
+
+  Line 15:     implementation("org.springframework.boot:spring-boot-starter-security")
+               ^ Unresolved reference: implementation
+
+  Line 16:     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+               ^ Unresolved reference: implementation
+
+  Line 17:     implementation("org.springframework.boot:spring-boot-starter-websocket")
+               ^ Unresolved reference: implementation
+
+  Line 20:     implementation("org.thymeleaf.extras:thymeleaf-extras-springsecurity6")
+               ^ Unresolved reference: implementation
+
+  Line 21:     implementation("com.github.admin4j:admin-spring-boot-starter:0.4.7")
+               ^ Unresolved reference: implementation
+
+  Line 24:     implementation("org.webjars:bootstrap:5.3.3")
+               ^ Unresolved reference: implementation
+
+  Line 25:     implementation("org.webjars:jquery:3.7.1")
+               ^ Unresolved reference: implementation
+
+  Line 26:     implementation("org.webjars:font-awesome:6.5.2")
+               ^ Unresolved reference: implementation
+
+  Line 29:     implementation("org.webjars.npm:chart.js:4.4.1")
+               ^ Unresolved reference: implementation
+
+  Line 32:     implementation("org.webjars:datatables:2.1.5")
+               ^ Unresolved reference: implementation
+
+  Line 33:     implementation("org.webjars:datatables-bootstrap5:2.0.2")
+               ^ Unresolved reference: implementation
+
+  Line 36:     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+               ^ Unresolved reference: implementation
+
+  Line 39:     testImplementation("org.springframework.boot:spring-boot-starter-test")
+               ^ Unresolved reference: testImplementation
+
+  Line 40:     testImplementation("org.springframework.security:spring-security-test")
+               ^ Unresolved reference: testImplementation
+
+  Line 41:     testImplementation("com.h2database:h2")
+               ^ Unresolved reference: testImplementation
+
+  Line 42:     testImplementation("org.mockito:mockito-core")
+               ^ Unresolved reference: testImplementation
+
+  Line 43:     testImplementation("org.mockito:mockito-junit-jupiter")
+               ^ Unresolved reference: testImplementation
+
+  Line 46: application {
+           ^ Expression 'application' cannot be invoked as a function. The function 'invoke()' is not found
+
+  Line 46: application {
+           ^ Unresolved reference. None of the following candidates is applicable because of receiver type mismatch:
+               public val PluginDependenciesSpec.application: PluginDependencySpec defined in org.gradle.kotlin.dsl
+
+  Line 47:     mainClass.set("com.logi.admin.LogiAdminApplication")
+               ^ Unresolved reference: mainClass
+
+  Line 51:     archiveFileName.set("logi-admin-panel.jar")
+               ^ Unresolved reference: archiveFileName
+
+  Line 55:     kotlinOptions {
+               ^ Unresolved reference: kotlinOptions
+
+  Line 56:         jvmTarget = "25"
+                   ^ Unresolved reference: jvmTarget
+
+  Line 57:         freeCompilerArgs = listOf(
+                   ^ Unresolved reference: freeCompilerArgs
+
+  Line 64: springBoot {
+           ^ Unresolved reference: springBoot
+
+  Line 65:     buildInfo()
+               ^ Unresolved reference: buildInfo
+
+32 errors
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 14s
+1 actionable task: 1 up-to-date
+PS C:\Ecosystem_logistics\logi>

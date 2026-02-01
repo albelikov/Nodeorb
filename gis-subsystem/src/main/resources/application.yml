@@ -1,0 +1,70 @@
+# GIS Subsystem Configuration
+
+server:
+  port: 8086
+
+spring:
+  application:
+    name: nodeorb-gis-subsystem
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nodeorb_gis
+    username: nodeorb_gis
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# GraphHopper Configuration
+graphhopper:
+  datapath: /data/graphhopper
+  defaultvehicle: car
+  weighting: fastest
+  instructions: true
+  calcPoints: true
+  simplification: true
+
+# Geocoding
+nodeorb:
+  gis:
+    geocoding:
+      provider: nominatim
+      api-key: ${GEOCODING_API_KEY:}
+      timeout: 5000
+      cache-ttl: 86400
+    routing:
+      default-speed:
+        car: 60
+        truck: 50
+        bike: 20
+      max-visited-nodes: 500000
+      timeout: 30000
+    geofencing:
+      max-geofences-per-account: 100
+      max-polygon-points: 1000
+    tiles:
+      cache-ttl: 604800
+      max-zoom: 18
+      default-zoom: 10
+
+logging:
+  level:
+    root: INFO
+    com.nodeorb.gis: DEBUG
+    org.locationtech: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

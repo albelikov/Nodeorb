@@ -1,0 +1,35 @@
+version: '3'
+
+extends: false
+
+services:
+  # Freight Marketplace Service
+  freight-marketplace:
+    build:
+      context: ./freight-marketplace
+      dockerfile: Dockerfile
+    container_name: nodeorb-freight-marketplace
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=postgres-primary
+      - REDIS_HOST=redis
+    ports:
+      - "8089:8089"
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - nodeorb-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    restart: unless-stopped
+
+networks:
+  nodeorb-network:
+    external: true

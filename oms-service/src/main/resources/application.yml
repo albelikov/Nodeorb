@@ -1,0 +1,82 @@
+# OMS Service Configuration
+
+server:
+  port: 8088
+
+spring:
+  application:
+    name: nodeorb-oms-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nodeorb_oms
+    username: nodeorb_oms
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # State machine configuration
+  statemachine:
+    enabled: true
+    persist: via-repo
+
+# Order Configuration
+nodeorb:
+  order:
+    numbering:
+      pattern: ORD-{yyyy}-{MM}-{####}
+      counter-reset: daily
+    statuses:
+      - pending
+      - confirmed
+      - processing
+      - ready-to-ship
+      - shipped
+      - in-transit
+      - delivered
+      - completed
+      - cancelled
+      - returned
+    rules:
+      auto-confirm: true
+      auto-allocate: true
+      split-orders: true
+    pricing:
+      enabled: true
+      cache-ttl: 3600
+    tracking:
+      enabled: true
+      update-interval: 30000
+
+  tms:
+    url: http://localhost:8084
+    sync: true
+
+  wms:
+    url: http://localhost:8087
+    sync: true
+
+logging:
+  level:
+    root: INFO
+    com.nodeorb.oms: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

@@ -1,0 +1,274 @@
+# Аналіз проблем проекту Logi та рішення
+
+## Структура проекту
+
+Проект має наступні модулі:
+- admin-panel
+- autonomous-ops
+- customs-service
+- cyber-resilience
+- fms-service
+- freight-marketplace
+- gis-subsystem
+- oms-service
+- reverse-logistics
+- scm-audit
+- scm-data-protection
+- scm-iam
+- tms-service
+- transport-platform
+- wms-service
+- yms-service
+
+## Типові проблеми та рішення
+
+### 1. **Проблеми з версіями Gradle/Kotlin**
+
+#### Симптоми:
+- Помилки компіляції
+- Несумісність версій
+- Deprecated warnings
+
+#### Рішення:
+```bash
+# Оновіть Gradle wrapper
+./gradlew wrapper --gradle-version=8.5
+
+# Перевірте версію Kotlin у buildSrc/build.gradle.kts або gradle.properties
+```
+
+Переконайтесь що у `gradle.properties` є:
+```properties
+kotlin.version=1.9.20
+org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m
+org.gradle.parallel=true
+org.gradle.caching=true
+```
+
+### 2. **Проблеми з залежностями**
+
+#### Симптоми:
+- Конфлікти версій
+- Відсутні залежності
+- ClassNotFoundException
+
+#### Рішення:
+```bash
+# Очистіть кеш Gradle
+./gradlew clean
+rm -rf ~/.gradle/caches/
+rm -rf .gradle/
+
+# Оновіть залежності
+./gradlew --refresh-dependencies
+```
+
+Перевірте `buildSrc/src/main/kotlin/Dependencies.kt` на коректність версій:
+```kotlin
+object Versions {
+    const val springBoot = "3.2.0"
+    const val kotlin = "1.9.20"
+    const val springCloud = "2023.0.0"
+}
+```
+
+### 3. **Проблеми з пам'яттю**
+
+#### Симптоми:
+- OutOfMemoryError
+- Gradle daemon crashes
+- Повільна збірка
+
+#### Рішення:
+
+У `gradle.properties`:
+```properties
+org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError
+org.gradle.daemon=true
+org.gradle.parallel=true
+org.gradle.caching=true
+```
+
+### 4. **Проблеми з Spring Boot**
+
+#### Симптоми:
+- Application failed to start
+- Bean creation errors
+
+#### Рішення:
+
+Перевірте `application.yml` у кожному модулі:
+```yaml
+spring:
+  application:
+    name: <module-name>
+  profiles:
+    active: dev
+```
+
+### 5. **Проблеми з базою даних**
+
+#### Симптоми:
+- Connection refused
+- Schema validation failed
+
+#### Рішення:
+
+Переконайтесь що Docker/база даних запущені:
+```bash
+# Якщо є docker-compose.yml
+docker-compose up -d
+
+# Або окремі контейнери
+docker run -d --name postgres -e POSTGRES_PASSWORD=password -p 5432:5432 postgres:15
+```
+
+### 6. **Проблеми з модулями**
+
+#### Симптоми:
+- Module not found
+- Circular dependencies
+
+#### Рішення:
+
+Перевірте `settings.gradle.kts`:
+```kotlin
+rootProject.name = "logi"
+
+include(
+    "admin-panel",
+    "autonomous-ops",
+    "customs-service",
+    // ... інші модулі
+)
+```
+
+## Покрокова інструкція запуску
+
+### Крок 1: Перевірка середовища
+```bash
+# Java
+java -version  # Потрібна версія 17 або вище
+
+# Gradle
+./gradlew --version
+
+# Docker (якщо використовується)
+docker --version
+```
+
+### Крок 2: Очищення та ініціалізація
+```bash
+# Очистка
+./gradlew clean
+
+# Оновлення wrapper
+./gradlew wrapper --gradle-version=8.5
+
+# Видалення кешу
+rm -rf .gradle/ build/
+```
+
+### Крок 3: Збірка проекту
+```bash
+# Збірка всього проекту
+./gradlew build
+
+# Або збірка без тестів для швидкості
+./gradlew build -x test
+
+# Збірка конкретного модулю
+./gradlew :admin-panel:build
+```
+
+### Крок 4: Запуск сервісів
+```bash
+# Запуск інфраструктури (якщо є docker-compose)
+docker-compose up -d
+
+# Запуск конкретного сервісу
+./gradlew :admin-panel:bootRun
+
+# Або через jar
+java -jar admin-panel/build/libs/admin-panel-*.jar
+```
+
+## Перевірка логів збірки
+
+Якщо є файл `build_log.txt`, перевірте його на:
+1. **ERROR** - критичні помилки
+2. **FAILED** - невдалі задачі
+3. **WARN** - попередження (можуть вказувати на проблеми)
+4. **deprecated** - застарілі API
+
+## Спільні помилки та фікси
+
+### Помилка: "Could not resolve dependencies"
+```bash
+./gradlew build --refresh-dependencies --stacktrace
+```
+
+### Помилка: "Task ... FAILED"
+```bash
+# Запустити з детальними логами
+./gradlew build --stacktrace --info
+```
+
+### Помилка: "Port already in use"
+```bash
+# Linux/Mac
+lsof -i :8080
+kill -9 <PID>
+
+# Windows
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F
+```
+
+## Налаштування IDE
+
+### IntelliJ IDEA
+1. File → Open → оберіть директорію проекту
+2. Дочекайтесь індексації
+3. File → Project Structure → SDK → оберіть Java 17+
+4. Build, Execution, Deployment → Build Tools → Gradle:
+   - Use Gradle from: 'gradle-wrapper.properties'
+   - Gradle JVM: Project SDK
+
+### VS Code
+Встановіть розширення:
+- Kotlin Language
+- Gradle for Java
+- Spring Boot Extension Pack
+
+## Додаткові поради
+
+1. **Використовуйте Gradle daemon** - значно прискорює збірку
+2. **Включіть parallel build** - якщо модулі незалежні
+3. **Build scan** - для аналізу проблем:
+   ```bash
+   ./gradlew build --scan
+   ```
+4. **Профілювання збірки**:
+   ```bash
+   ./gradlew build --profile
+   ```
+
+## Контакти для допомоги
+
+Якщо проблеми залишаються:
+1. Перегляньте `BUILD_FIXES_REPORT.md` у проекті
+2. Запустіть `build_script.bat` (для Windows)
+3. Перевірте логи у `build_log.txt`
+4. Створіть issue на GitHub з детальним описом помилки
+
+## Швидкий чеклист
+
+- [ ] Java 17+ встановлена
+- [ ] JAVA_HOME налаштована
+- [ ] Gradle wrapper працює (`./gradlew --version`)
+- [ ] Кеш очищений (`./gradlew clean`)
+- [ ] Залежності оновлені (`--refresh-dependencies`)
+- [ ] База даних/Docker запущені
+- [ ] Порти вільні (8080, 5432, тощо)
+- [ ] IDE налаштована правильно

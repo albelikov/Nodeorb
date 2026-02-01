@@ -1,0 +1,92 @@
+Starting a Gradle Daemon, 1 incompatible and 1 stopped Daemons could not be reused, use --status for details
+> Task :buildSrc:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :buildSrc:generateExternalPluginSpecBuilders
+> Task :buildSrc:extractPrecompiledScriptPluginPlugins
+> Task :buildSrc:generateScriptPluginAdapters
+> Task :buildSrc:pluginDescriptors
+> Task :buildSrc:processResources
+> Task :buildSrc:compilePluginsBlocks
+> Task :buildSrc:generatePrecompiledScriptPluginAccessors
+> Task :buildSrc:compileKotlin
+> Task :buildSrc:compileJava NO-SOURCE
+> Task :buildSrc:compileGroovy NO-SOURCE
+> Task :buildSrc:classes
+> Task :buildSrc:jar
+
+> Configure project :admin-panel
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:8:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:9:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:10:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:11:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:14:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:17:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:18:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:21:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:22:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:23:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:26:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:29:9: Unresolved reference 'implementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:32:9: Unresolved reference 'testImplementation'.
+e: file:///C:/Logistics_Ecosystem/admin-panel/build.gradle.kts:33:9: Unresolved reference 'testImplementation'.
+
+FAILURE: Build failed with an exception.
+
+* Where:
+Build file 'C:\Logistics_Ecosystem\admin-panel\build.gradle.kts' line: 8
+
+* What went wrong:
+Script compilation errors:
+
+  Line 08:         implementation(libs.bundles.spring.web)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 09:         implementation(libs.spring.boot.starter.data.jpa)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 10:         implementation(libs.spring.boot.starter.thymeleaf)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 11:         implementation(libs.spring.boot.starter.webflux)                                     
+                   ^ Unresolved reference 'implementation'.
+
+  Line 14:         implementation(libs.postgresql)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 17:         implementation(libs.bundles.spring.security.bundle)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 18:         implementation(libs.bundles.jwt.bundle)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 21:         implementation(libs.spring.boot.starter.actuator)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 22:         implementation(libs.micrometer.core)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 23:         implementation(libs.micrometer.registry.prometheus)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 26:         implementation(libs.spring.boot.starter.websocket)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 29:         implementation(libs.spring.kafka)
+                   ^ Unresolved reference 'implementation'.
+
+  Line 32:         testImplementation(libs.spring.boot.starter.test)
+                   ^ Unresolved reference 'testImplementation'.
+
+  Line 33:         testImplementation(libs.testcontainers.postgresql)
+                   ^ Unresolved reference 'testImplementation'.
+
+14 errors
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 29s
+9 actionable tasks: 9 executed
+Build failed with error code 1 

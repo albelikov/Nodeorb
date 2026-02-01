@@ -1,0 +1,35 @@
+{
+  models [
+    {
+      title Claude 3.5 Sonnet,
+      provider anthropic,
+      model claude-3-5-sonnet-20241022,
+      apiKey YOUR_ANTHROPIC_API_KEY
+    }
+  ],
+  tabAutocompleteModel {
+    title DeepSeek Coder,
+    provider free-trial,
+    model deepseek-coder-1.3b
+  },
+  customCommands [
+    {
+      name microservice,
+      prompt Generate a microservice following our architecture Kotlin, Spring Boot, RBAC, audit logging, dual-mode support
+    },
+    {
+      name security-review,
+      prompt Review this code for CMMC Level 3 compliance FIPS encryption, RBAC, audit logs, input validation
+    }
+  ],
+  contextProviders [
+    {
+      name code,
+      params {}
+    },
+    {
+      name docs,
+      params {}
+    }
+  ]
+}

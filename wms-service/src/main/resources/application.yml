@@ -1,0 +1,80 @@
+# WMS Service Configuration
+
+server:
+  port: 8087
+
+spring:
+  application:
+    name: nodeorb-wms-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nodeorb_wms
+    username: nodeorb_wms
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # Barcode configuration
+  barcode4j:
+    barcode4j-conf: classpath:barcode4j.xml
+
+# WMS Configuration
+nodeorb:
+  warehouse:
+    zones:
+      - receiving
+      - storage
+      - picking
+      - packing
+      - shipping
+    locations:
+      type: bin
+      max-items-per-location: 100
+    inventory:
+      abc-analysis-enabled: true
+      cycle-count-enabled: true
+      count-frequency-days: 30
+    picking:
+      strategy: wave
+      batch-size: 50
+    rules:
+      putaway:
+        enabled: true
+        strategy: nearest
+      replenishment:
+        enabled: true
+        threshold: 20
+
+  iot:
+    mqtt:
+      broker-url: tcp://localhost:1883
+      topics:
+        scanner: warehouse/+/scanner/+
+        rfid: warehouse/+/rfid/+
+        sensor: warehouse/+/sensor/+
+
+logging:
+  level:
+    root: INFO
+    com.nodeorb.wms: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

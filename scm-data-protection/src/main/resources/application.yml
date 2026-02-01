@@ -1,0 +1,60 @@
+# SCM-Data Protection Service Configuration
+
+server:
+  port: 8083
+
+spring:
+  application:
+    name: nodeorb-scm-data-protection
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nodeorb_data_protection
+    username: nodeorb_dp
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# Encryption Configuration
+jasypt:
+  encryptor:
+    password: ${ENCRYPTION_KEY:change-me-in-production}
+    algorithm: PBEWITHHMACSHA512ANDAES_256
+    key-obtention-iterations: 1000
+    pool-size: 1
+    salt-generator-classname: org.jasypt.salt.RandomSaltGenerator
+    iv-generator-classname: org.jasypt.iv.RandomIvGenerator
+    string-output-type: base64
+
+# Data masking patterns
+nodeorb:
+  data-protection:
+    masking:
+      email:
+        enabled: true
+        pattern: "(?<=.{2}).(?=.*@)"
+      phone:
+        enabled: true
+        pattern: "(?<=.{3}).(?=.{4})"
+      ssn:
+        enabled: true
+        pattern: "(?<=.{3}).(?=.{4})"
+
+logging:
+  level:
+    root: INFO
+    com.nodeorb.dataprotection: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

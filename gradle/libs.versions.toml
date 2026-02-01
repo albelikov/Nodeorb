@@ -1,0 +1,210 @@
+[versions]
+# Core
+kotlin = "1.9.21"
+spring-boot = "3.4.1"
+java = "25"
+
+# Spring
+spring-cloud = "2023.0.0"
+spring-kafka = "3.3.0"
+
+# Database
+postgresql = "42.7.1"
+hibernate-spatial = "6.4.1.Final"
+postgis-jdbc = "2023.1.0"
+
+# Kafka
+kafka = "3.6.1"
+kafka-streams = "3.6.1"
+
+# gRPC
+grpc = "1.60.0"
+protobuf = "3.25.1"
+grpc-kotlin = "1.4.1"
+
+# GIS & Spatial
+geotools = "29.2"
+jts = "1.19.0"
+here-sdk = "4.15.0"
+
+# IoT & Robotics
+paho-mqtt = "1.2.5"
+rosjava-core = "0.3.9"
+
+# Blockchain
+fabric-sdk-java = "2.2.21"
+web3j = "4.9.8"
+
+# Security & Cryptography
+spring-security = "6.2.1"
+jwt = "0.12.3"
+bouncycastle = "1.78.1"
+nimbus-jose-jwt = "9.37.3"
+
+# XML/EDI Processing
+jackson-xml = "2.16.1"
+jaxb-api = "2.3.1"
+jaxb-runtime = "2.3.1"
+
+# Monitoring & Observability
+micrometer = "1.12.1"
+micrometer-registry-prometheus = "1.12.1"
+opentelemetry = "1.32.0"
+
+# Testing
+junit = "5.10.1"
+mockito = "5.7.0"
+testcontainers = "1.19.3"
+testcontainers-postgresql = "1.19.3"
+wiremock = "3.3.1"
+
+# Logging
+logback = "1.4.14"
+slf4j = "2.0.9"
+
+# Web & UI
+thymeleaf = "3.1.2"
+websocket = "3.2.2"
+webflux = "3.2.2"
+
+[libraries]
+# Spring Boot
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security", version.ref = "spring-boot" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "spring-boot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "spring-boot" }
+spring-boot-starter-thymeleaf = { module = "org.springframework.boot:spring-boot-starter-thymeleaf", version.ref = "spring-boot" }
+spring-boot-starter-websocket = { module = "org.springframework.boot:spring-boot-starter-websocket", version.ref = "spring-boot" }
+spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
+
+# Spring Cloud
+spring-cloud-starter-config = { module = "org.springframework.cloud:spring-cloud-starter-config", version.ref = "spring-cloud" }
+spring-cloud-starter-netflix-eureka-client = { module = "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client", version.ref = "spring-cloud" }
+
+# Spring Kafka
+spring-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka" }
+
+# Database
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+hibernate-spatial = { module = "org.hibernate.orm:hibernate-spatial", version.ref = "hibernate-spatial" }
+postgis-jdbc = { module = "net.postgis:postgis-jdbc", version.ref = "postgis-jdbc" }
+
+# Kafka
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka" }
+kafka-streams = { module = "org.apache.kafka:kafka-streams", version.ref = "kafka-streams" }
+
+# gRPC
+grpc-netty-shaded = { module = "io.grpc:grpc-netty-shaded", version.ref = "grpc" }
+grpc-protobuf = { module = "io.grpc:grpc-protobuf", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpc-kotlin" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
+protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobuf" }
+
+# GIS & Spatial
+geotools-main = { module = "org.geotools:gt-main", version.ref = "geotools" }
+geotools-shapefile = { module = "org.geotools:gt-shapefile", version.ref = "geotools" }
+jts-core = { module = "org.locationtech.jts:jts-core", version.ref = "jts" }
+here-sdk = { module = "com.here.sdk:here-sdk", version.ref = "here-sdk" }
+
+# IoT & Robotics
+paho-mqtt-client = { module = "org.eclipse.paho:org.eclipse.paho.client.mqttv3", version.ref = "paho-mqtt" }
+rosjava-core = { module = "org.ros.rosjava_core:rosjava", version.ref = "rosjava-core" }
+
+# Blockchain
+fabric-sdk-java = { module = "org.hyperledger.fabric:fabric-sdk-java", version.ref = "fabric-sdk-java" }
+web3j-core = { module = "org.web3j:core", version.ref = "web3j" }
+
+# Security & Cryptography
+nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus-jose-jwt" }
+bouncycastle-provider = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncycastle" }
+
+# XML/EDI Processing
+jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson-xml" }
+jaxb-api = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
+jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "jaxb-runtime" }
+
+# Monitoring
+micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometer" }
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer-registry-prometheus" }
+opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
+
+# Testing
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version = "5.2.1" }
+testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers-postgresql" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
+wiremock = { module = "org.wiremock:wiremock", version.ref = "wiremock" }
+
+# Logging
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+
+[bundles]
+# Spring Web Bundle
+spring-web = [
+    "spring-boot-starter-web",
+    "spring-boot-starter-validation",
+    "spring-boot-starter-actuator"
+]
+
+# Spring Security Bundle
+spring-security-bundle = [
+    "spring-boot-starter-security",
+    "nimbus-jose-jwt"
+]
+
+# JWT Bundle
+jwt-bundle = [
+    "nimbus-jose-jwt"
+]
+
+# Kafka Bundle
+kafka-bundle = [
+    "kafka-clients",
+    "spring-kafka"
+]
+
+# gRPC Bundle
+grpc-bundle = [
+    "grpc-netty-shaded",
+    "grpc-protobuf",
+    "grpc-stub",
+    "grpc-kotlin-stub",
+    "protobuf-java",
+    "protobuf-kotlin"
+]
+
+# GIS Bundle без JAI
+gis-bundle-minimal = [
+    "jts-core",
+    "hibernate-spatial",
+    "postgis-jdbc"
+]
+
+# XML Processing Bundle
+xml-processing = [
+    "jackson-dataformat-xml",
+    "jaxb-api",
+    "jaxb-runtime"
+]
+
+# Test Bundle
+test-bundle = [
+    "junit-jupiter",
+    "mockito-core",
+    "mockito-kotlin",
+    "testcontainers"
+]
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.6" }
+

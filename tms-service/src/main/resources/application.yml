@@ -1,0 +1,83 @@
+# TMS Service Configuration
+
+server:
+  port: 8084
+
+spring:
+  application:
+    name: nodeorb-tms-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nodeorb_tms
+    username: nodeorb_tms
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # Quartz scheduling
+  quartz:
+    job-store-type: memory
+    properties:
+      org:
+        quartz:
+          threadPool:
+            threadCount: 10
+
+# GIS Configuration
+nodeorb:
+  gis:
+    graphhopper:
+      data-path: /data/graphhopper
+      default-speed: 50
+    routing:
+      default-vehicles: car,truck
+      max-visited-nodes: 100000
+
+# Route optimization
+  routing:
+    optimization:
+      enabled: true
+      max-retries: 3
+      timeout-seconds: 30
+
+# Fleet integration
+  fleet:
+    fms-url: http://localhost:8085
+    sync-interval: 60000
+
+# Cargo tracking
+  tracking:
+    update-interval: 30000
+    retention-days: 90
+
+# Carrier management
+  carrier:
+    default-margin: 15
+    auto-assign-threshold: 100
+
+logging:
+  level:
+    root: INFO
+    com.nodeorb.tms: DEBUG
+    org.hibernate.SQL: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

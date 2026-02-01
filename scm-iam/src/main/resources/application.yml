@@ -1,0 +1,59 @@
+# SCM-IAM Service Configuration
+
+server:
+  port: 8081
+
+spring:
+  application:
+    name: nodeorb-scm-iam
+  
+  # Database
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nodeorb_iam
+    username: nodeorb_iam
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  # Redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # Security
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/nodeorb}
+
+# Keycloak Configuration
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL:http://localhost:8180}
+  realm: nodeorb
+  resource: nodeorb-iam
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET}
+  ssl-required: none
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.nodeorb.iam: DEBUG
+    org.springframework.security: DEBUG
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

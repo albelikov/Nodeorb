@@ -1,0 +1,326 @@
+# Logistics Ecosystem Project Rules
+
+## Project Overview
+This is a dual-purpose logistics ecosystem supporting both commercial operations and strategic resilience (government/defense). The system integrates autonomous vehicles, drones, warehouse automation, and comprehensive security compliance.
+
+## Architecture Principles
+
+### Microservices Architecture
+- Each service must be independently deployable
+- Use Kubernetes for orchestration
+- Implement canary deployments for risk minimization
+- Communication via REST/gRPC and Kafka event bus
+
+### Technology Stack
+- **Backend**: Kotlin/Java for microservices
+- **Cross-platform**: Kotlin Multiplatform for mobile/desktop apps
+- **Frontend**: React/Vue for web dashboards
+- **Infrastructure**: Kubernetes, Docker, GovCloud (AWS/Azure)
+- **Message Queue**: Apache Kafka
+- **Databases**: PostgreSQL, PostGIS for geospatial data
+- **Integration**: REST, gRPC, EDI (EDIFACT, XML)
+
+## Core Microservices
+
+When implementing any service, follow these patterns:
+
+### 1. OMS (Order Management System)
+- Manage full order lifecycle
+- Support both civilian and strategic modes
+- Log all state changes for audit
+
+### 2. WMS (Warehouse Management System)
+- Integrate with RFID, AGV robotics
+- Mobile app for warehouse workers (Android/iOS)
+- Real-time inventory tracking
+
+### 3. TMS (Transportation Management System)
+- Route planning with geofence support
+- Carbon footprint calculation
+- Integration with FMS for fleet coordination
+
+### 4. FMS (Fleet Management System)
+- Real-time vehicle tracking via IoT sensors
+- Driver mobile app (Kotlin Multiplatform)
+- Dispatcher web/desktop interface
+- Integration with GIS (HERE Maps, OpenStreetMap)
+
+### 5. SCM (Security & Compliance Module)
+- RBAC with ABAC context-aware policies
+- Immutable audit logs
+- GDPR, FedRAMP, CMMC Level 3 compliance
+- Zero Trust architecture
+
+### 6. DroneFleetController
+- Mission management for autonomous drones
+- Geofence enforcement
+- Weather and battery monitoring
+- Safety protocols and incident logging
+
+### 7. AutonomousService
+- V2X communication handling
+- Specialized logic for autonomous vehicles
+- Geofence validation
+
+## Security & Compliance Requirements
+
+### Mandatory Security Practices
+- All endpoints must be authenticated and authorized
+- Implement FIPS 140-2 compliant encryption
+- Use mTLS for service-to-service communication
+- Apply principle of least privilege
+- Log all access attempts and data modifications
+- Support data residency per geographic restrictions
+
+### Compliance Standards
+- **US**: FedRAMP, CMMC Level 3, NIST 800-171, DFARS, ITAR/EAR
+- **EU**: GDPR, CSRD, Digital Transport Law, Ecodesign Directive
+- Implement DLP (Data Loss Prevention)
+- Support CUI (Controlled Unclassified Information)
+
+### Audit & Logging
+- Use immutable append-only logs
+- Integrate with CISA AIS for threat intelligence
+- Maintain chain of custody for all operations
+- Support forensic analysis capabilities
+
+## Dual-Purpose Design
+
+### Operational Modes
+Every component must support two modes:
+1. **Civilian Mode**: Standard commercial operations
+2. **Strategic Resilience Mode**: Government/emergency response
+
+### Mode Switching
+- UI must clearly indicate current mode
+- Strategic mode activation requires elevated privileges
+- Strategic mode can override civilian operations
+- Log all mode switches with justification
+
+### Strategic Resilience Features
+- Resource reallocation capabilities
+- Priority-based task scheduling
+- Integration with FEMA, DoD, DHS, HHS systems
+- Emergency communication protocols
+
+## Geographic Restrictions
+
+### Data Residency
+- Implement per-country data storage rules
+- Support dynamic country exclusion in routing
+- Enforce geofences at multiple levels
+- Maintain separate data stores per regulatory zone
+
+### Routing Constraints
+- Block routes through restricted areas
+- Support dynamic geofence updates
+- Validate all coordinates against permitted zones
+
+## User Interface Guidelines
+
+### Dashboard Development
+- Use consistent layout across all dashboards
+- Implement real-time data updates (WebSocket/SSE)
+- Show operational mode prominently
+- Include ESG metrics where applicable
+- Support role-based view customization
+
+### Mobile Applications
+- Use Kotlin Multiplatform for cross-platform consistency
+- Offline-first architecture for field operations
+- Barcode/QR scanning integration
+- Emergency communication features
+
+### Key Dashboards
+1. Main Operations Dashboard (Dispatcher)
+2. Route Planner (TMS/FMS)
+3. Warehouse Monitoring (WMS/RWS)
+4. Drone Management Panel
+5. Cybersecurity Panel (SOC)
+6. Strategic Mode Control Panel
+7. LSP Partner Portal
+8. ESG & Sustainability Dashboard
+9. Administrative Panel
+
+## Integration Patterns
+
+### External Systems
+- **Commercial**: SAP, Oracle, Shopify, Project44, Transfix
+- **Government**: ACE (US Customs), DELTA/eFAST (DoD), FEMA LMD, HHS SNS
+- **Regulatory**: EPA, FDA, USDA, FMCSA
+
+### Integration Gateway
+- Centralized integration point for all external systems
+- Protocol transformation (REST, SOAP, EDI, XML)
+- Rate limiting and circuit breakers
+- Message queuing for async operations
+
+## ESG & Sustainability
+
+### Carbon Footprint Tracking
+- Calculate emissions for all transport operations
+- Support CSRD reporting requirements
+- Track circular economy metrics
+- Monitor recycling percentages
+
+### Reverse Logistics
+- Full cycle: return → certification → reuse/recycle
+- RMS + RWS + RLP integration
+- Automated return processing workflow
+- Update LSP portals with return status
+
+## Code Quality Standards
+
+### General Practices
+- Write unit tests with >80% coverage
+- Implement integration tests for critical paths
+- Use dependency injection
+- Follow SOLID principles
+- Document APIs with OpenAPI/Swagger
+
+### Naming Conventions
+- Services: PascalCase (e.g., OrderManagementSystem)
+- Endpoints: kebab-case (e.g., /api/v1/order-management)
+- Variables: camelCase
+- Constants: UPPER_SNAKE_CASE
+- Database tables: snake_case
+
+### Error Handling
+- Use structured error responses
+- Include correlation IDs for tracing
+- Log errors with appropriate severity
+- Implement retry logic with exponential backoff
+- Never expose internal errors to external users
+
+## Key User Flows
+
+### 1. Security Threat Response
+SCM Alert → Dispatcher Review → Activate Strategic Mode → Reassign Drones/Vehicles → Log Actions
+
+### 2. Reverse Logistics & Recycling
+Mobile App Return → Certification Process → Drone Delivery → Update LSP Portal → ESG Metrics Update
+
+### 3. Policy Administration
+Configure Geofences (Admin) → Block Routes (Dispatcher) → Log in SCM → Audit Trail
+
+## DevOps & Deployment
+
+### CI/CD Pipeline
+- Automated testing (unit, integration, e2e)
+- Security scanning (SAST, DAST, dependency check)
+- Container image scanning
+- Automated deployment to staging
+- Manual approval for production
+- Canary deployments with automated rollback
+
+### Monitoring & Observability
+- Implement distributed tracing (OpenTelemetry)
+- Centralized logging (ELK stack)
+- Metrics collection (Prometheus/Grafana)
+- Real-time alerting
+- SLA monitoring
+
+### Infrastructure
+- Infrastructure as Code (Terraform/Pulumi)
+- GovCloud compliance for government operations
+- Multi-region deployment
+- Disaster recovery with RTO < 4 hours
+
+## Documentation Requirements
+
+### Mandatory Documentation
+- System Security Plan (SSP)
+- Architecture Decision Records (ADR)
+- API documentation (OpenAPI)
+- C4 diagrams (Context, Container, Component, Code)
+- SBOM (Software Bill of Materials)
+- Plan of Action & Milestones (POA&M)
+- FedRAMP Authorization Package
+- CMMC Level 3 Assessment Report
+
+### Code Documentation
+- All public APIs must have JSDoc/KDoc comments
+- Complex algorithms require explanation comments
+- README.md for each microservice
+- Architecture diagrams for subsystems
+
+## Performance Requirements
+
+### Response Times
+- API endpoints: < 200ms (p95)
+- Dashboard load: < 2s
+- Real-time updates: < 1s latency
+- Batch operations: Async with status tracking
+
+### Scalability
+- Horizontal scaling for all services
+- Support 10,000+ concurrent users
+- Handle 1M+ orders per day
+- Store 5+ years of audit logs
+
+## Special Considerations
+
+### Autonomous Systems
+- Treat drones and vehicles as assets with telemetry
+- Implement fail-safe mechanisms
+- Support remote emergency shutdown
+- Maintain detailed operation logs
+
+### Blockchain Integration
+- Use Hyperledger for freight marketplace
+- Smart contracts for automated payments
+- Immutable transaction records
+- Privacy-preserving data sharing
+
+### AI/ML Analytics
+- Demand forecasting
+- Route optimization
+- Anomaly detection
+- Predictive maintenance
+
+## Development Workflow
+
+### Branch Strategy
+- `main`: production-ready code
+- `develop`: integration branch
+- `feature/*`: new features
+- `hotfix/*`: urgent fixes
+- `release/*`: release preparation
+
+### Code Review
+- All code requires peer review
+- Security-sensitive changes need security team review
+- Architecture changes need architect approval
+- Compliance changes need legal review
+
+### Testing Strategy
+- Unit tests for business logic
+- Integration tests for service interactions
+- E2E tests for critical user flows
+- Security tests for auth/authz
+- Performance tests for high-load scenarios
+- Chaos engineering for resilience
+
+## Prohibited Practices
+
+- ❌ Hardcoded credentials or secrets
+- ❌ Direct database access from UI
+- ❌ Bypassing authentication/authorization
+- ❌ Logging sensitive PII without redaction
+- ❌ Using deprecated or vulnerable dependencies
+- ❌ Skipping security scans
+- ❌ Deploying without proper testing
+- ❌ Storing unencrypted sensitive data
+- ❌ Using localStorage for sensitive information (in web apps)
+
+## Contact & Support
+
+For questions about:
+- Architecture: contact solution architect
+- Security: contact security team / SOC
+- Compliance: contact compliance officer
+- DevOps: contact platform team
+
+---
+
+**Note**: This system handles dual-use technology. All contributors must understand ITAR/EAR restrictions and maintain appropriate clearances for classified work.

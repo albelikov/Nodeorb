@@ -1,0 +1,69 @@
+# Freight Marketplace Service Configuration
+
+server:
+  port: 8089
+
+spring:
+  application:
+    name: nodeorb-freight-marketplace
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nodeorb_freight
+    username: nodeorb_freight
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # WebSocket for real-time bidding
+  websocket:
+    servlet:
+      path: /ws/auction
+    message-size-limit: 65536
+
+# Freight Marketplace Configuration
+nodeorb:
+  marketplace:
+    commission:
+      shipper-rate: 2.5
+      carrier-rate: 2.5
+    bidding:
+      auction-duration-minutes: 60
+      min-bid-decrement: 1.0
+      auto-extend-minutes: 5
+    reputation:
+      weight-completion: 0.4
+      weight-timeliness: 0.3
+      weight-communication: 0.2
+      weight-condition: 0.1
+    escrow:
+      release-delay-hours: 48
+      dispute-resolution-days: 7
+
+  tms:
+    url: http://localhost:8084
+
+logging:
+  level:
+    root: INFO
+    com.nodeorb.freight: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

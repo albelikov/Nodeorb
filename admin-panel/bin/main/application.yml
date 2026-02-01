@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: admin-panel
+  datasource:
+    url: jdbc:postgresql://localhost:5432/logistics_admin
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD:admin}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: admin-panel-group
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+services:
+  oms:
+    url: ${OMS_SERVICE_URL:http://localhost:8081}
+    enabled: ${OMS_SERVICE_ENABLED:true}
+  wms:
+    url: ${WMS_SERVICE_URL:http://localhost:8082}
+    enabled: ${WMS_SERVICE_ENABLED:true}
+  tms:
+    url: ${TMS_SERVICE_URL:http://localhost:8083}
+    enabled: ${TMS_SERVICE_ENABLED:true}
+  fms:
+    url: ${FMS_SERVICE_URL:http://localhost:8084}
+    enabled: ${FMS_SERVICE_ENABLED:true}
+  yms:
+    url: ${YMS_SERVICE_URL:http://localhost:8085}
+    enabled: ${YMS_SERVICE_ENABLED:true}
+  transport-platform:
+    url: ${TRANSPORT_PLATFORM_URL:http://localhost:8090}
+    enabled: ${TRANSPORT_PLATFORM_ENABLED:true}
+  gis-subsystem:
+    url: ${GIS_SUBSYSTEM_URL:http://localhost:8091}
+    enabled: ${GIS_SUBSYSTEM_ENABLED:true}
+  customs:
+    url: ${CUSTOMS_SERVICE_URL:http://localhost:8092}
+    enabled: ${CUSTOMS_SERVICE_ENABLED:true}
+  freight-marketplace:
+    url: ${FREIGHT_MARKETPLACE_URL:http://localhost:8093}
+    enabled: ${FREIGHT_MARKETPLACE_ENABLED:true}
+  autonomous-ops:
+    url: ${AUTONOMOUS_OPS_URL:http://localhost:8094}
+    enabled: ${AUTONOMOUS_OPS_ENABLED:true}
+  reverse-logistics:
+    url: ${REVERSE_LOGISTICS_URL:http://localhost:8095}
+    enabled: ${REVERSE_LOGISTICS_ENABLED:true}
+  scm-iam:
+    url: ${SCM_IAM_URL:http://localhost:8100}
+    enabled: ${SCM_IAM_ENABLED:true}
+  scm-data-protection:
+    url: ${SCM_DATA_PROTECTION_URL:http://localhost:8101}
+    enabled: ${SCM_DATA_PROTECTION_ENABLED:true}
+  scm-audit:
+    url: ${SCM_AUDIT_URL:http://localhost:8102}
+    enabled: ${SCM_AUDIT_ENABLED:true}
+  cyber-resilience:
+    url: ${CYBER_RESILIENCE_URL:http://localhost:8103}
+    enabled: ${CYBER_RESILIENCE_ENABLED:true}
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    logistics.admin: DEBUG
+

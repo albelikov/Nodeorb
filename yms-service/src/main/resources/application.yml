@@ -1,0 +1,100 @@
+# YMS Service Configuration
+# Compatible with PostgreSQL 18
+
+server:
+  port: 8094
+
+spring:
+  application:
+    name: nodeorb-yms-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/nodeorb_yms
+    username: nodeorb_yms
+    password: ${DB_PASSWORD:password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 25
+      minimum-idle: 5
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # Quartz scheduling
+  quartz:
+    job-store-type: memory
+    properties:
+      org:
+        quartz:
+          threadPool:
+            threadCount: 5
+
+# YMS Configuration
+nodeorb:
+  yard:
+    # Управление слотами
+    slots:
+      type: time-based
+      duration-minutes: 60
+      buffer-minutes: 15
+      overbooking-percentage: 10
+    # Управление доками
+    doors:
+      type: dynamic
+      allocation-strategy: balanced
+      reserved-doors:
+        - type: inbound
+          count: 3
+        - type: outbound
+          count: 3
+    # Приоритеты
+    priorities:
+      - critical
+      - high
+      - standard
+      - low
+    # Операции
+    operations:
+      check-in:
+        required: true
+        grace-period-minutes: 15
+      check-out:
+        required: true
+        buffer-minutes: 30
+    # Интеграция с IoT
+    iot:
+      enabled: true
+      mqtt:
+        broker-url: tcp://localhost:1883
+        topics:
+          trailer: yard/+/trailer/+
+          gate: yard/+/gate/+
+          sensor: yard/+/sensor/+
+
+  wms:
+    url: http://localhost:8087
+
+  fms:
+    url: http://localhost:8085
+
+logging:
+  level:
+    root: INFO
+    com.nodeorb.yms: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

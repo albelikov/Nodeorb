@@ -9,6 +9,12 @@ import com.nodeorb.freight.marketplace.repository.FreightOrderRepository
 import com.nodeorb.freight.marketplace.matching.BidMatchingAlgorithm
 import com.nodeorb.freight.marketplace.FreightMarketplaceProperties
 import com.nodeorb.freight.marketplace.dto.LocationDto
+import com.nodeorb.freight.marketplace.entity.CargoType
+import com.nodeorb.freight.marketplace.entity.OrderStatus
+import com.nodeorb.freight.marketplace.entity.BidStatus
+import com.nodeorb.freight.marketplace.dto.CargoType as DtoCargoType
+import com.nodeorb.freight.marketplace.dto.OrderStatus as DtoOrderStatus
+import com.nodeorb.freight.marketplace.dto.BidStatus as DtoBidStatus
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Point
@@ -37,7 +43,7 @@ class FreightOrderService(
             shipperId = orderDto.shipperId,
             title = orderDto.title,
             description = orderDto.description,
-            cargoType = orderDto.cargoType,
+            cargoType = CargoType.valueOf(orderDto.cargoType.name),
             weight = orderDto.weight,
             volume = orderDto.volume,
             pickupLocation = createPoint(orderDto.pickupLocation),
@@ -46,7 +52,7 @@ class FreightOrderService(
             deliveryAddress = orderDto.deliveryLocation.address,
             requiredDeliveryDate = orderDto.requiredDeliveryDate,
             maxBidAmount = orderDto.maxBidAmount,
-            status = OrderStatus.OPEN
+            status = com.nodeorb.freight.marketplace.entity.OrderStatus.OPEN
         )
         
         val savedOrder = freightOrderRepository.save(orderEntity)
@@ -65,7 +71,7 @@ class FreightOrderService(
     }
 
     fun getOpenOrders(pageable: Pageable): Page<FreightOrderDto> {
-        return freightOrderRepository.findByStatus(OrderStatus.OPEN, pageable)
+        return freightOrderRepository.findByStatus(com.nodeorb.freight.marketplace.entity.OrderStatus.OPEN, pageable)
             .map { mapToDto(it) }
     }
 
@@ -81,14 +87,14 @@ class FreightOrderService(
             amount = bidDto.amount,
             proposedDeliveryDate = bidDto.proposedDeliveryDate,
             notes = bidDto.notes,
-            status = BidStatus.PENDING
+            status = com.nodeorb.freight.marketplace.entity.BidStatus.PENDING
         )
         
         val savedBid = bidRepository.save(bidEntity)
         
         // Обновляем статус заказа
-        if (order.status == OrderStatus.OPEN) {
-            order.status = OrderStatus.AUCTION_ACTIVE
+        if (order.status == com.nodeorb.freight.marketplace.entity.OrderStatus.OPEN) {
+            order.status = com.nodeorb.freight.marketplace.entity.OrderStatus.AUCTION_ACTIVE
             freightOrderRepository.save(order)
         }
         
@@ -99,7 +105,7 @@ class FreightOrderService(
             amount = savedBid.amount,
             proposedDeliveryDate = savedBid.proposedDeliveryDate,
             notes = savedBid.notes,
-            status = savedBid.status,
+            status = savedBid.status.toDto(),
             createdAt = savedBid.createdAt,
             updatedAt = savedBid.updatedAt
         )
@@ -115,7 +121,7 @@ class FreightOrderService(
                     amount = bid.amount,
                     proposedDeliveryDate = bid.proposedDeliveryDate,
                     notes = bid.notes,
-                    status = bid.status,
+                    status = bid.status.toDto(),
                     score = bid.score,
                     createdAt = bid.createdAt,
                     updatedAt = bid.updatedAt
@@ -139,15 +145,15 @@ class FreightOrderService(
         }
         
         // Пометка выбранной заявки как принятой
-        bid.status = BidStatus.ACCEPTED
-        order.status = OrderStatus.AWARDED
+        bid.status = com.nodeorb.freight.marketplace.entity.BidStatus.ACCEPTED
+        order.status = com.nodeorb.freight.marketplace.entity.OrderStatus.AWARDED
         
         // Пометка остальных заявок как отклоненных
         bidRepository.findByFreightOrderId(orderId)
             .filter { it.id != bidId }
             .forEach { 
-                it.status = BidStatus.REJECTED 
-                bidRepository.save(it)
+                it.status = com.nodeorb.freight.marketplace.entity.BidStatus.REJECTED 
+                bidRepository
             }
         
         val savedBid = bidRepository.save(bid)
@@ -160,7 +166,7 @@ class FreightOrderService(
             amount = savedBid.amount,
             proposedDeliveryDate = savedBid.proposedDeliveryDate,
             notes = savedBid.notes,
-            status = savedBid.status,
+            status = savedBid.status.toDto(),
             createdAt = savedBid.createdAt,
             updatedAt = savedBid.updatedAt
         )
@@ -176,7 +182,7 @@ class FreightOrderService(
                     amount = bid.amount,
                     proposedDeliveryDate = bid.proposedDeliveryDate,
                     notes = bid.notes,
-                    status = bid.status,
+                    status = bid.status.toDto(),
                     score = bid.score,
                     createdAt = bid.createdAt,
                     updatedAt = bid.updatedAt
@@ -195,7 +201,7 @@ class FreightOrderService(
     }
 
     private fun validateBid(order: FreightOrderEntity, bidDto: BidDto) {
-        if (order.status != OrderStatus.OPEN && order.status != OrderStatus.AUCTION_ACTIVE) {
+        if (order.status != com.nodeorb.freight.marketplace.entity.OrderStatus.OPEN && order.status != com.nodeorb.freight.marketplace.entity.OrderStatus.AUCTION_ACTIVE) {
             throw FreightMarketplaceException("Order is not accepting bids")
         }
         
@@ -232,7 +238,7 @@ class FreightOrderService(
             shipperId = entity.shipperId,
             title = entity.title,
             description = entity.description,
-            cargoType = entity.cargoType,
+            cargoType = DtoCargoType.valueOf(entity.cargoType.name),
             weight = entity.weight,
             volume = entity.volume,
             pickupLocation = LocationDto(
@@ -253,7 +259,7 @@ class FreightOrderService(
             ),
             requiredDeliveryDate = entity.requiredDeliveryDate,
             maxBidAmount = entity.maxBidAmount,
-            status = entity.status,
+            status = DtoOrderStatus.valueOf(entity.status.name),
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
             bids = entity.bids.map { bid ->
@@ -264,12 +270,25 @@ class FreightOrderService(
                     amount = bid.amount,
                     proposedDeliveryDate = bid.proposedDeliveryDate,
                     notes = bid.notes,
-                    status = bid.status,
+                    status = DtoBidStatus.valueOf(bid.status.name),
                     score = bid.score,
                     createdAt = bid.createdAt,
                     updatedAt = bid.updatedAt
                 )
             }
         )
+    }
+
+    // Extension functions for type conversion
+    private fun com.nodeorb.freight.marketplace.entity.BidStatus.toDto(): com.nodeorb.freight.marketplace.dto.BidStatus {
+        return com.nodeorb.freight.marketplace.dto.BidStatus.valueOf(this.name)
+    }
+
+    private fun com.nodeorb.freight.marketplace.entity.OrderStatus.toDto(): com.nodeorb.freight.marketplace.dto.OrderStatus {
+        return com.nodeorb.freight.marketplace.dto.OrderStatus.valueOf(this.name)
+    }
+
+    private fun com.nodeorb.freight.marketplace.entity.CargoType.toDto(): com.nodeorb.freight.marketplace.dto.CargoType {
+        return com.nodeorb.freight.marketplace.dto.CargoType.valueOf(this.name)
     }
 }

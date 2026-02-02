@@ -22,8 +22,7 @@ dependencies {
     
     // Database
     implementation("org.postgresql:postgresql:42.6.0")
-    implementation("org.flywaydb:flyway-core:9.22.3")
-    implementation("org.flywaydb:flyway-database-postgresql:9.22.3")
+    implementation("org.flywaydb:flyway-core:8.5.13")
     
     // Spatial/Geospatial dependencies
     implementation("org.hibernate.orm:hibernate-spatial:6.4.1.Final")

@@ -104,7 +104,7 @@ class FreightOrderServiceTest {
             shipperId = UUID.randomUUID(),
             title = title,
             description = "Требуется перевозка контейнера 20 футов",
-            cargoType = CargoType.CONTAINER,
+            cargoType = com.nodeorb.freight.marketplace.entity.CargoType.CONTAINER,
             weight = BigDecimal("25000.00"),
             volume = BigDecimal("33.2"),
             pickupLocation = geometryFactory.createPoint(org.locationtech.jts.geom.Coordinate(9.9937, 53.5511)),
@@ -113,7 +113,7 @@ class FreightOrderServiceTest {
             deliveryAddress = "Берлин, Германия",
             requiredDeliveryDate = LocalDateTime.now().plusDays(3),
             maxBidAmount = BigDecimal("5000.00"),
-            status = OrderStatus.OPEN
+            status = com.nodeorb.freight.marketplace.entity.OrderStatus.OPEN
         )
     }
 

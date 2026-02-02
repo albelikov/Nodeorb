@@ -4,6 +4,7 @@ import com.nodeorb.freight.marketplace.entity.BidEntity
 import com.nodeorb.freight.marketplace.entity.UserProfileEntity
 import com.nodeorb.freight.marketplace.FreightMarketplaceProperties
 import com.nodeorb.freight.marketplace.repository.UserProfileRepository
+import com.nodeorb.freight.marketplace.entity.FreightOrderEntity
 import org.locationtech.jts.geom.Point
 import org.springframework.stereotype.Component
 import kotlin.math.abs

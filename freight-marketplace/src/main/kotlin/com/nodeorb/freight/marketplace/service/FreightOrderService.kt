@@ -8,6 +8,7 @@ import com.nodeorb.freight.marketplace.repository.BidRepository
 import com.nodeorb.freight.marketplace.repository.FreightOrderRepository
 import com.nodeorb.freight.marketplace.matching.BidMatchingAlgorithm
 import com.nodeorb.freight.marketplace.FreightMarketplaceProperties
+import com.nodeorb.freight.marketplace.dto.LocationDto
 import org.locationtech.jts.geom.Coordinate
 import org.locationtech.jts.geom.GeometryFactory
 import org.locationtech.jts.geom.Point

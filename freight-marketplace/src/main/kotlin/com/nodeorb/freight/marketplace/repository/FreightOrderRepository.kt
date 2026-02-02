@@ -2,6 +2,9 @@ package com.nodeorb.freight.marketplace.repository
 
 import com.nodeorb.freight.marketplace.entity.FreightOrderEntity
 import com.nodeorb.freight.marketplace.entity.OrderStatus
+import com.nodeorb.freight.marketplace.entity.BidEntity
+import com.nodeorb.freight.marketplace.entity.BidStatus
+import com.nodeorb.freight.marketplace.entity.UserProfileEntity
 import org.locationtech.jts.geom.Point
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable

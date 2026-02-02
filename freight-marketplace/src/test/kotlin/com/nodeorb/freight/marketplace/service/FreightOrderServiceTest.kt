@@ -6,6 +6,8 @@ import com.nodeorb.freight.marketplace.dto.LocationDto
 import com.nodeorb.freight.marketplace.entity.*
 import com.nodeorb.freight.marketplace.repository.FreightOrderRepository
 import com.nodeorb.freight.marketplace.matching.BidMatchingAlgorithm
+import com.nodeorb.freight.marketplace.dto.CargoType
+import com.nodeorb.freight.marketplace.dto.OrderStatus
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

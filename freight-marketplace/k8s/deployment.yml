@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: freight-marketplace
+  namespace: logistics
+  labels:
+    app: freight-marketplace
+    version: v1.0.0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: freight-marketplace
+  template:
+    metadata:
+      labels:
+        app: freight-marketplace
+        version: v1.0.0
+    spec:
+      containers:
+      - name: freight-marketplace
+        image: registry.nodeorb.com/freight-marketplace:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8084
+          protocol: TCP
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: SPRING_DATASOURCE_URL
+          valueFrom:
+            secretKeyRef:
+              name: freight-marketplace-db-secret
+              key: url
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: freight-marketplace-db-secret
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freight-marketplace-db-secret
+              key: password
+        - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka-cluster:9092"
+        - name: SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+          value: "https://auth.nodeorb.com/realms/nodeorb"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1024Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8084
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8084
+          initialDelaySeconds: 30
+          periodSeconds: 15
+      imagePullSecrets:
+      - name: registry-credentials
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: freight-marketplace
+  namespace: logistics
+spec:
+  selector:
+    app: freight-marketplace
+  ports:
+  - port: 8084
+    targetPort: 8084
+    protocol: TCP
+  type: ClusterIP

@@ -1,11 +1,8 @@
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.spring")
-    kotlin("plugin.jpa")
+    id("org.jetbrains.kotlin.jvm")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
 }
-
 extra["springCloudVersion"] = "2023.0.0"
 
 dependencyManagement {

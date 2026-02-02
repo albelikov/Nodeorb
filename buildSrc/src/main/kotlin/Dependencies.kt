@@ -1,12 +1,12 @@
 /**
  * Centralized dependency management for Logi project
- * Kotlin 2.0.0, Gradle 8.5, Java 25
+ * Kotlin 2.3.0, Gradle 9.3.0, Java 25
  */
 
 object Versions {
     // Core
-    const val kotlin = "2.0.0"
-    const val springBoot = "3.2.0"
+    const val kotlin = "2.3.0"
+    const val springBoot = "4.0.2"
     const val springCloud = "2023.0.0"
 
     // Database
@@ -30,6 +30,20 @@ object Versions {
 
     // Documentation
     const val springdoc = "2.3.0"
+
+    // Message Queues
+    const val kafka = "3.6.1"
+    const val springKafka = "3.3.0"
+
+    // Geographic Information Systems
+    const val hibernateSpatial = "6.4.1.Final"
+    const val postgis = "2023.1.0"
+    const val jts = "1.19.0"
+    const val mockk = "1.13.8"
+
+    // Spring Cloud
+    const val springCloudEureka = "4.0.0"
+    const val springWebsocket = "3.2.0"
 }
 
 object Kotlin {
@@ -43,6 +57,7 @@ object SpringBoot {
     const val starter = "org.springframework.boot:spring-boot-starter"
     const val starterWeb = "org.springframework.boot:spring-boot-starter-web"
     const val starterWebflux = "org.springframework.boot:spring-boot-starter-webflux"
+    const val starterWebsocket = "org.springframework.boot:spring-boot-starter-websocket"
     const val starterDataJpa = "org.springframework.boot:spring-boot-starter-data-jpa"
     const val starterDataRedis = "org.springframework.boot:spring-boot-starter-data-redis"
     const val starterSecurity = "org.springframework.boot:spring-boot-starter-security"

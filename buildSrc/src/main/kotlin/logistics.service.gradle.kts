@@ -5,40 +5,19 @@ plugins {
 }
 
 java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
+    toolchain { languageVersion.set(JavaLanguageVersion.of(25)) }
 }
 
-kotlin {
-    jvmToolchain(21)
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
+        freeCompilerArgs.add("-Xjsr305=strict")
     }
 }
 
-tasks.withType<JavaCompile> {
-    options.release.set(21)
-}
-
-repositories {
-    mavenCentral()
-    maven {
-        url = uri("https://repo.osgeo.org/repository/release/")
-    }
-    maven {
-        url = uri("https://download.java.net/maven/2/")
-    }
-    maven {
-        url = uri("https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/")
-    }
-}
-
-tasks.test {
-    useJUnitPlatform()
-    testLogging {
-        events("passed", "skipped", "failed")
-        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
-        showStandardStreams = true
-    }
+dependencies {
+    implementation(Kotlin.stdlib)
+    implementation(Kotlin.reflect)
+    implementation(Utils.jacksonKotlin)
+    implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
 }

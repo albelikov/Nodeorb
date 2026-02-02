@@ -1,9 +1,7 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "2.3.0"
-    id("org.jetbrains.kotlin.plugin.spring") version "2.3.0"
-    id("org.jetbrains.kotlin.plugin.jpa") version "2.3.0"
-    id("org.springframework.boot") version "4.0.2"
-    id("io.spring.dependency-management") version "1.1.4"
+    id("org.jetbrains.kotlin.jvm")
+    id("org.springframework.boot")
+    id("io.spring.dependency-management")
 }
 
 allprojects {

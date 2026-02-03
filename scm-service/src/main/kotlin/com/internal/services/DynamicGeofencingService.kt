@@ -23,7 +23,7 @@ class DynamicGeofencingService(
     }
 
     /**
-     * Валидация доступа к данным груза на основе географических координат
+     * Проверка доступа к данным груза на основе географических координат
      */
     @Transactional
     fun validateCargoAccess(
@@ -46,8 +46,17 @@ class DynamicGeofencingService(
             cargoLatitude, cargoLongitude
         )
 
+        // Проверка на подмену GPS-координат
+        val gpsSpoofingDetected = detectGpsSpoofing(
+            userId,
+            DeviceLocation(payloadGeoLat, payloadGeoLon, Instant.now()),
+            null // В реальной системе здесь будет предыдущая локация
+        )
+
         // Определяем, разрешен ли доступ
-        val accessGranted = isWithinRoute && distanceToCargo <= MAX_DISTANCE_FROM_ROUTE
+        val accessGranted = isWithinRoute && 
+                           distanceToCargo <= MAX_DISTANCE_FROM_ROUTE &&
+                           !gpsSpoofingDetected.isSpoofingDetected
 
         val validationResult = GeofencingValidationResult(
             userId = userId,
@@ -59,7 +68,10 @@ class DynamicGeofencingService(
             payloadGeoLat = payloadGeoLat,
             payloadGeoLon = payloadGeoLon,
             cargoLatitude = cargoLatitude,
-            cargoLongitude = cargoLongitude
+            cargoLongitude = cargoLongitude,
+            gpsSpoofingDetected = gpsSpoofingDetected.isSpoofingDetected,
+            spoofingConfidence = gpsSpoofingDetected.confidence,
+            spoofingAnomalies = gpsSpoofingDetected.detectedAnomalies
         )
 
         // Отправляем событие о проверке доступа
@@ -383,7 +395,10 @@ data class GeofencingValidationResult(
     val payloadGeoLat: Double,
     val payloadGeoLon: Double,
     val cargoLatitude: Double,
-    val cargoLongitude: Double
+    val cargoLongitude: Double,
+    val gpsSpoofingDetected: Boolean = false,
+    val spoofingConfidence: Double = 0.0,
+    val spoofingAnomalies: List<String> = emptyList()
 )
 
 data class DeviceLocation(

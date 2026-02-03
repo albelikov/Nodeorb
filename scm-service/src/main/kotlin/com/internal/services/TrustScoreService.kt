@@ -51,6 +51,7 @@ class TrustScoreService(
         val biometricsComplianceScore = calculateBiometricsComplianceScore(history)
         val geographicComplianceScore = calculateGeographicComplianceScore(history)
         val timeFactorScore = calculateTimeFactorScore(history)
+        val complianceScore = calculateComplianceScore(history)
 
         // Взвешенное среднее
         val trustScore = (
@@ -58,7 +59,8 @@ class TrustScoreService(
             appealSuccessScore * APPEAL_SUCCESS_WEIGHT +
             biometricsComplianceScore * BIOMETRICS_COMPLIANCE_WEIGHT +
             geographicComplianceScore * GEOGRAPHIC_COMPLIANCE_WEIGHT +
-            timeFactorScore * TIME_FACTOR_WEIGHT
+            timeFactorScore * TIME_FACTOR_WEIGHT +
+            complianceScore * 0.1 // Добавляем вес для комплаенс-проверок
         )
 
         return trustScore.coerceIn(MIN_TRUST_SCORE, MAX_TRUST_SCORE)
@@ -264,6 +266,15 @@ class TrustScoreService(
         // За каждый месяц активности +1 балл, максимум 50 баллов
         val timeScore = (daysActive / 30.0).coerceAtMost(50.0)
         return timeScore
+    }
+
+    /**
+     * Расчет оценки комплаенс-проверок
+     */
+    private fun calculateComplianceScore(history: UserHistory): Double {
+        // В реальной системе здесь будет анализ результатов комплаенс-проверок
+        // Пока заглушка - возвращает базовый балл
+        return BASE_TRUST_SCORE
     }
 
     /**

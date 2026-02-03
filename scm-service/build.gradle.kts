@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
     id("org.springframework.boot")
     id("io.spring.dependency-management")
-    kotlin("plugin.spring")
+    kotlin("plugin.spring") version "2.0.21"
 }
 
 dependencies {
@@ -14,10 +14,10 @@ dependencies {
     
     // Database
     implementation("org.postgresql:postgresql:42.7.2")
-    implementation("org.flywaydb:flyway-core:10.16.2")
+    implementation("org.flywaydb:flyway-core:10.15.1")
     
     // gRPC
-    implementation("io.grpc:grpc-spring-boot-starter:6.3.0")
+    implementation("io.grpc:grpc-spring-boot-starter:6.2.0")
     implementation("io.grpc:grpc-protobuf:1.60.0")
     implementation("io.grpc:grpc-stub:1.60.0")
     implementation("com.google.protobuf:protobuf-java:3.25.1")
@@ -33,7 +33,7 @@ dependencies {
     implementation("org.springframework.kafka:spring-kafka:3.2.2")
     
     // ClickHouse
-    implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.6.4")
+    implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.6.3")
     
     // OPA Integration
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")

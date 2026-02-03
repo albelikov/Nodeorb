@@ -13,6 +13,7 @@ import java.util.*
 /**
  * Сервис генерации пакетов доказательств для страховых случаев
  * Агрегирует все связанные события по order_id и формирует подписанный JSON-объект
+ * с использованием Hash Chaining для подтверждения неизменяемости логов в WORM-хранилище
  */
 @Service
 class EvidencePackageGenerator(
@@ -43,7 +44,7 @@ class EvidencePackageGenerator(
         // Собираем все геозонные проверки
         val geofenceChecks = complianceRepository.getGeofenceChecksByOrderId(orderId)
 
-        // Создаем цепочку хэшей
+        // Создаем цепочку хэшей (Hash Chaining)
         val hashChain = buildHashChain(events, validations, accessChecks, geofenceChecks)
         
         // Формируем пакет доказательств
@@ -59,7 +60,7 @@ class EvidencePackageGenerator(
             signature = generateSignature(hashChain.lastOrNull()?.hash ?: "")
         )
 
-        // Сохраняем пакет доказательств
+        // Сохраняем пакет доказательств в WORM хранилище
         complianceRepository.saveEvidencePackage(evidencePackage)
 
         // Отправляем событие о создании пакета
@@ -76,7 +77,8 @@ class EvidencePackageGenerator(
                     "validations_count" to validations.size.toString(),
                     "access_checks_count" to accessChecks.size.toString(),
                     "geofence_checks_count" to geofenceChecks.size.toString(),
-                    "root_hash" to evidencePackage.rootHash
+                    "root_hash" to evidencePackage.rootHash,
+                    "hash_chain_length" to hashChain.size.toString()
                 )
             )
         )
@@ -142,10 +144,68 @@ class EvidencePackageGenerator(
         return objectMapper.readValue(json)
     }
 
+    /**
+     * Создание цифрового доказательства для конкретного события
+     */
+    @Transactional(readOnly = true)
+    fun createDigitalEvidence(
+        orderId: String,
+        eventId: String,
+        eventType: String,
+        eventData: Map<String, Any>
+    ): DigitalEvidence {
+        // Получаем все связанные события
+        val relatedEvents = complianceRepository.getRelatedEvents(orderId, eventId)
+        
+        // Создаем цепочку хэшей для этого события
+        val hashChain = buildEventHashChain(eventId, eventType, eventData, relatedEvents)
+        
+        // Формируем цифровое доказательство
+        val digitalEvidence = DigitalEvidence(
+            eventId = eventId,
+            orderId = orderId,
+            eventType = eventType,
+            eventData = eventData,
+            hashChain = hashChain,
+            rootHash = hashChain.lastOrNull()?.hash ?: "",
+            signature = generateSignature(hashChain.lastOrNull()?.hash ?: ""),
+            createdAt = Instant.now()
+        )
+
+        // Сохраняем в WORM хранилище
+        complianceRepository.saveDigitalEvidence(digitalEvidence)
+
+        return digitalEvidence
+    }
+
+    /**
+     * Проверка цифрового доказательства
+     */
+    fun verifyDigitalEvidence(digitalEvidence: DigitalEvidence): DigitalEvidenceVerificationResult {
+        // Проверяем подпись
+        val signatureValid = verifySignature(digitalEvidence.rootHash, digitalEvidence.signature)
+        
+        // Проверяем целостность цепочки хэшей
+        val hashChainValid = verifyHashChain(digitalEvidence.hashChain)
+        
+        // Проверяем соответствие root hash
+        val rootHashValid = digitalEvidence.hashChain.lastOrNull()?.hash == digitalEvidence.rootHash
+
+        val isVerified = signatureValid && hashChainValid && rootHashValid
+
+        return DigitalEvidenceVerificationResult(
+            isVerified = isVerified,
+            signatureValid = signatureValid,
+            hashChainValid = hashChainValid,
+            rootHashValid = rootHashValid,
+            verificationTime = Instant.now()
+        )
+    }
+
     // Вспомогательные методы
 
     /**
-     * Построение цепочки хэшей
+     * Построение цепочки хэшей для всех событий
      */
     private fun buildHashChain(
         events: List<ComplianceEvent>,
@@ -218,6 +278,51 @@ class EvidencePackageGenerator(
                 )
             )
             previousHash = hash
+        }
+
+        return hashChain
+    }
+
+    /**
+     * Построение цепочки хэшей для конкретного события
+     */
+    private fun buildEventHashChain(
+        eventId: String,
+        eventType: String,
+        eventData: Map<String, Any>,
+        relatedEvents: List<ComplianceEvent>
+    ): List<HashChainNode> {
+        val hashChain = mutableListOf<HashChainNode>()
+        var previousHash = ""
+
+        // Добавляем основное событие
+        val eventHashInput = "$previousHash$eventId${Instant.now()}$eventType${eventData.toString()}"
+        val eventHash = calculateHash(eventHashInput)
+        hashChain.add(
+            HashChainNode(
+                id = eventId,
+                type = eventType,
+                hash = eventHash,
+                previousHash = previousHash,
+                timestamp = Instant.now()
+            )
+        )
+        previousHash = eventHash
+
+        // Добавляем связанные события
+        relatedEvents.forEach { event ->
+            val relatedHashInput = "$previousHash${event.eventId}${event.timestamp}${event.eventType}"
+            val relatedHash = calculateHash(relatedHashInput)
+            hashChain.add(
+                HashChainNode(
+                    id = event.eventId,
+                    type = "RELATED_EVENT",
+                    hash = relatedHash,
+                    previousHash = previousHash,
+                    timestamp = event.timestamp
+                )
+            )
+            previousHash = relatedHash
         }
 
         return hashChain
@@ -308,6 +413,26 @@ data class HashChainNode(
     val timestamp: Instant
 )
 
+data class DigitalEvidence(
+    val id: String? = null,
+    val eventId: String,
+    val orderId: String,
+    val eventType: String,
+    val eventData: Map<String, Any>,
+    val hashChain: List<HashChainNode>,
+    val rootHash: String,
+    val signature: String,
+    val createdAt: Instant
+)
+
+data class DigitalEvidenceVerificationResult(
+    val isVerified: Boolean,
+    val signatureValid: Boolean,
+    val hashChainValid: Boolean,
+    val rootHashValid: Boolean,
+    val verificationTime: Instant
+)
+
 /**
  * Модели для хранения в репозитории
  */
@@ -318,6 +443,20 @@ data class ComplianceEvent(
     val timestamp: Instant,
     val userId: String,
     val details: Map<String, Any>
+)
+
+data class ManualEntryValidation(
+    val id: String? = null,
+    val userId: String,
+    val orderId: String,
+    val materialsCost: Double,
+    val laborCost: Double,
+    val currency: String,
+    val riskVerdict: String,
+    val aiConfidenceScore: Double,
+    val requiresAppeal: Boolean,
+    val appealStatus: String,
+    val createdAt: Instant
 )
 
 data class AccessCheck(
@@ -338,20 +477,30 @@ data class GeofenceCheck(
     val longitude: Double,
     val timestamp: Instant,
     val violationReason: String? = null
+)
+
+data class SecurityEvent(
+    val eventId: String,
+    val eventType: String,
+    val timestamp: Instant,
+    val userId: String,
+    val sourceService: String,
+    val details: Map<String, String>
 ) <environment_details>
 # Visual Studio Code - Insiders Visible Files
-scm-service/src/main/kotlin/com/internal/engine/validation/AccessValidator.kt
+scm-service/src/main/kotlin/com/internal/services/ComplianceOraclesService.kt
 
 # Visual Studio Code - Insiders Open Tabs
-scm-service/src/main/kotlin/com/internal/services/ExternalComplianceAdapter.kt
-scm-service/src/main/kotlin/com/internal/engine/validation/AccessValidator.kt
+scm-service/src/main/kotlin/com/internal/services/ManualCostValidationService.kt
+scm-service/src/main/kotlin/com/internal/services/DynamicGeofencingService.kt
+scm-service/src/main/kotlin/com/internal/services/ComplianceOraclesService.kt
 scm-service/src/main/kotlin/com/internal/services/EvidencePackageGenerator.kt
 
 # Current Time
-2/3/2026, 11:14:54 PM (Europe/Kiev, UTC+2:00)
+2/3/2026, 11:28:50 PM (Europe/Kiev, UTC+2:00)
 
 # Context Window Usage
-37,566 / 256K tokens used (15%)
+103,452 / 256K tokens used (40%)
 
 # Current Mode
 ACT MODE

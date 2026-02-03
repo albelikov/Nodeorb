@@ -10,6 +10,8 @@ import java.time.Instant
 /**
  * Сервис динамического расчета Trust Score 2.0
  * Анализирует историю пользователя для определения уровня доверия
+ * Реализует алгоритм динамического пересчета рейтинга доверия пользователя
+ * на основе его поведения (точность ввода цен, попытки доступа вне геозон, история комплаенс-проверок)
  */
 @Service
 class TrustScoreService(
@@ -336,6 +338,71 @@ class TrustScoreService(
             else -> emptyList()
         }
     }
+
+    /**
+     * Динамическое обновление Trust Score на основе нового события
+     */
+    @Transactional
+    fun updateTrustScoreForEvent(userId: String, eventType: String, eventData: Map<String, Any>): Double {
+        // Получаем текущий Trust Score
+        val currentScore = getTrustScore(userId)
+        
+        // Рассчитываем корректировку на основе события
+        val adjustment = calculateEventAdjustment(eventType, eventData)
+        
+        // Обновляем Trust Score
+        val newScore = (currentScore + adjustment).coerceIn(MIN_TRUST_SCORE, MAX_TRUST_SCORE)
+        
+        // Сохраняем обновленный Trust Score
+        keycloakIntegration.updateTrustScore(userId, newScore)
+        
+        // Отправляем событие об обновлении
+        securityEventBus.sendSecurityEvent(
+            SecurityEvent(
+                eventId = "TRUST_SCORE_ADJUSTED_${System.currentTimeMillis()}",
+                eventType = "TRUST_SCORE_ADJUSTED",
+                timestamp = Instant.now(),
+                userId = userId,
+                sourceService = "SCM_SERVICE",
+                details = mapOf(
+                    "event_type" to eventType,
+                    "adjustment" to adjustment.toString(),
+                    "old_trust_score" to currentScore.toString(),
+                    "new_trust_score" to newScore.toString(),
+                    "trust_level" to getTrustLevel(newScore)
+                )
+            )
+        )
+
+        return newScore
+    }
+
+    /**
+     * Расчет корректировки Trust Score на основе события
+     */
+    private fun calculateEventAdjustment(eventType: String, eventData: Map<String, Any>): Double {
+        return when (eventType) {
+            "MANUAL_COST_VALIDATION" -> {
+                val status = eventData["status"] as? String ?: "UNKNOWN"
+                when (status) {
+                    "APPROVED" -> 2.0  // Поощрение за точность
+                    "AUDIT_REQUIRED" -> -1.0  // Небольшое понижение
+                    "REJECTED" -> -5.0  // Сильное понижение
+                    else -> 0.0
+                }
+            }
+            "GEOFENCING_VIOLATION" -> {
+                -3.0  // Понижение за нарушение геозон
+            }
+            "SANCTION_CHECK_FAILED" -> {
+                -10.0  // Сильное понижение за попытку работы с заблокированными контрагентами
+            }
+            "BIOMETRICS_FAILED" -> {
+                -2.0  // Небольшое понижение за неудачную биометрическую проверку
+            }
+            else -> 0.0
+        }
+    }
 }
 
 /**
@@ -365,22 +432,65 @@ data class Appeal(
     val status: String, // PENDING, APPROVED, REJECTED
     val justification: String,
     val createdAt: Instant
+)
+
+data class ManualEntryValidation(
+    val id: String? = null,
+    val userId: String,
+    val orderId: String,
+    val materialsCost: Double,
+    val laborCost: Double,
+    val currency: String,
+    val riskVerdict: String,
+    val aiConfidenceScore: Double,
+    val requiresAppeal: Boolean,
+    val appealStatus: String,
+    val createdAt: Instant
+)
+
+data class AccessCheck(
+    val id: String,
+    val userId: String,
+    val orderId: String,
+    val accessGranted: Boolean,
+    val timestamp: Instant,
+    val reason: String? = null
+)
+
+data class GeofenceCheck(
+    val id: String,
+    val userId: String,
+    val orderId: String,
+    val isInside: Boolean,
+    val latitude: Double,
+    val longitude: Double,
+    val timestamp: Instant,
+    val violationReason: String? = null
+)
+
+data class SecurityEvent(
+    val eventId: String,
+    val eventType: String,
+    val timestamp: Instant,
+    val userId: String,
+    val sourceService: String,
+    val details: Map<String, String>
 ) <environment_details>
 # Visual Studio Code - Insiders Visible Files
-scm-service/src/main/kotlin/com/internal/repository/WormStorageRepository.kt
+scm-service/src/main/kotlin/com/internal/services/EvidencePackageGenerator.kt
 
 # Visual Studio Code - Insiders Open Tabs
-scm-service/src/main/kotlin/com/internal/services/ExternalComplianceAdapter.kt
-scm-service/src/main/kotlin/com/internal/engine/validation/AccessValidator.kt
+scm-service/src/main/kotlin/com/internal/services/ManualCostValidationService.kt
+scm-service/src/main/kotlin/com/internal/services/DynamicGeofencingService.kt
+scm-service/src/main/kotlin/com/internal/services/ComplianceOraclesService.kt
 scm-service/src/main/kotlin/com/internal/services/EvidencePackageGenerator.kt
-scm-service/src/main/kotlin/com/internal/repository/WormStorageRepository.kt
 scm-service/src/main/kotlin/com/internal/services/TrustScoreService.kt
 
 # Current Time
-2/3/2026, 11:16:38 PM (Europe/Kiev, UTC+2:00)
+2/3/2026, 11:30:10 PM (Europe/Kiev, UTC+2:00)
 
 # Context Window Usage
-48,520 / 256K tokens used (19%)
+110,835 / 256K tokens used (43%)
 
 # Current Mode
 ACT MODE

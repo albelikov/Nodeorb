@@ -1,40 +1,71 @@
-# ЭТАП 1: Сборка
-FROM gradle:9.3.0-jdk21 AS build
+# Dockerfile для SCM-Service на Java 25
+FROM eclipse-temurin:25-jdk-jammy AS builder
+
 WORKDIR /app
 
-# 1. Копируем файлы управления
+# Установка Gradle 9.3.0
+RUN wget -q https://services.gradle.org/distributions/gradle-9.3-bin.zip  \
+    && unzip gradle-9.3-bin.zip \
+    && rm gradle-9.3-bin.zip \
+    && mv gradle-9.3 /opt/gradle
+
+ENV GRADLE_HOME=/opt/gradle
+ENV PATH=$PATH:$GRADLE_HOME/bin
+
+# Копируем только файлы сборки для кэширования зависимостей
 COPY gradlew .
 COPY gradle gradle
-COPY settings.gradle.kts .
 COPY build.gradle.kts .
-COPY buildSrc buildSrc
+COPY settings.gradle.kts .
 
-# 2. Создаем ПУСТЫЕ директории для ВСЕХ модулей, упомянутых в settings
-# Эта команда берет все строки с include, очищает их от кавычек и скобок
-# и создает папки, чтобы Gradle был доволен.
-RUN grep "include" settings.gradle.kts | tr -d '()", ' | sed 's/include//' | xargs mkdir -p
+# Загружаем зависимости (кешируется отдельным слоем)
+RUN gradle dependencies --no-daemon
 
-# На всякий случай добавим те, что уже вылетали:
-RUN mkdir -p freight-marketplace wms-service fms-service tms-service admin-backend admin-frontend common
-# 3. Копируем реальный код только для нужного сервиса
-COPY scm-service scm-service
+# Копируем исходный код и собираем приложение
+COPY src src
+RUN gradle bootJar --no-daemon
 
-# 4. Подготовка gradlew
-RUN apt-get update && apt-get install -y dos2unix && \
-    dos2unix gradlew && chmod +x gradlew
+# Финальный образ
+FROM eclipse-temurin:25-jre-jammy
 
-# 5. Сборка
-RUN ./gradlew :scm-service:bootJar -x test --no-daemon
+LABEL maintainer="SCM Team <scm@nodeorb.com>"
+LABEL version="4.0.0"
+LABEL description="SCM Service for Nodeorb Platform"
 
-# ЭТАП 2: Запуск
-FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-COPY --from=build /app/scm-service/build/libs/*.jar app.jar
+# Создаем пользователя для безопасности
+RUN groupadd -r scmuser && useradd -r -g scmuser -s /bin/false scmuser
 
-RUN groupadd -r nodeorb && useradd -r -g nodeorb nodeorb && \
-    chown -R nodeorb:nodeorb /app
-USER nodeorb
+# Копируем JAR из builder
+COPY --from=builder /app/build/libs/scm-service.jar /app/scm-service.jar
 
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Настройки Java для Java 25
+ENV JAVA_OPTS="\
+    -XX:+UseZGC \
+    -XX:MaxGCPauseMillis=200 \
+    -XX:+UseStringDeduplication \
+    -XX:+ExitOnOutOfMemoryError \
+    -Xmx2048m \
+    -Xms1024m \
+    -Djava.security.egd=file:/dev/./urandom \
+    -Dfile.encoding=UTF-8 \
+    --enable-preview \
+    -Dspring.profiles.active=prod"
+
+# Настройки для Native Memory Tracking
+ENV JAVA_TOOL_OPTIONS="-XX:NativeMemoryTracking=summary -XX:+UnlockDiagnosticVMOptions"
+
+# Экспонируем порты
+EXPOSE 8080 9090
+
+# Настройка прав
+RUN chown -R scmuser:scmuser /app
+USER scmuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/scm/management/health-check || exit 1
+
+# Запуск приложения
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/scm-service.jar"]

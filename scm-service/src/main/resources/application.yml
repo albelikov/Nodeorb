@@ -1,56 +1,211 @@
 spring:
   application:
     name: scm-service
+  profiles:
+    active: ${PROFILE:dev}
   
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/scm_db}
-    username: ${SPRING_DATASOURCE_USERNAME:nodeorb}
-    password: ${SPRING_DATASOURCE_PASSWORD:nodeorb_dev_password}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/scm?currentSchema=scm
+    username: ${DB_USERNAME:scm_admin}
+    password: ${DB_PASSWORD:change_me_123}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 30000
+      max-lifetime: 1800000
+      keepalive-time: 30000
+      pool-name: SCM-PostgreSQL-Pool
   
   jpa:
+    database: POSTGRESQL
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
-    show-sql: false
+      ddl-auto: validate
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
         format_sql: true
-    open-in-view: false
+        jdbc:
+          batch_size: 50
+          fetch_size: 100
+        order_inserts: true
+        order_updates: true
+        default_batch_fetch_size: 20
+        generate_statistics: ${ENABLE_HIBERNATE_STATS:false}
+      javax:
+        persistence:
+          sharedCache:
+            mode: ENABLE_SELECTIVE
   
-  jackson:
-    serialization:
-      write-dates-as-timestamps: false
-    default-property-inclusion: non_null
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      connect-timeout: 10s
+  
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        acks: all
+        retries: 3
+    consumer:
+      group-id: scm-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        isolation.level: read_committed
+  
+  graphql:
+    graphiql:
+      enabled: true
+    schema:
+      printer:
+        enabled: true
+  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:https://auth.nodeorb.com/realms/nodeorb }
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:https://auth.nodeorb.com/realms/nodeorb/protocol/openid-connect/certs }
+          audiences: scm-service,nodeorb-platform
+  
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=300s
 
-server:
-  port: 8080
-  error:
-    include-message: always
-    include-binding-errors: always
+# ClickHouse Configuration
+clickhouse:
+  url: jdbc:clickhouse://${CLICKHOUSE_HOST:localhost}:${CLICKHOUSE_PORT:8123}/scm_audit
+  username: ${CLICKHOUSE_USERNAME:default}
+  password: ${CLICKHOUSE_PASSWORD:}
+  connection-timeout: 30s
+  socket-timeout: 60s
 
-jwt:
-  secret: ${JWT_SECRET:defaultSecretKeyThatShouldBeChangedInProductionAndMustBeAtLeast256BitsLong}
-  expiration: 86400000  # 24 hours
+# Open Policy Agent
+opa:
+  url: ${OPA_URL:http://localhost:8181}
+  policies:
+    path: classpath:/opa/
+    auto-reload: true
+    polling-interval: 30s
 
-logging:
-  level:
-    com.nodeorb: DEBUG
-    org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
+# gRPC Configuration
+grpc:
+  server:
+    port: ${GRPC_PORT:9090}
+    enable-reflection: true
+    security:
+      enabled: true
+      certificate-chain: classpath:certificates/server.crt
+      private-key: classpath:certificates/server.key
+      trust-cert-collection: classpath:certificates/ca.crt
+    max-inbound-message-size: 10485760 # 10MB
 
+# Keycloak Configuration
+keycloak:
+  realm: nodeorb
+  auth-server-url: ${KEYCLOAK_URL:https://auth.nodeorb.com }
+  ssl-required: external
+  resource: scm-service
+  credentials:
+    secret: ${KEYCLOAK_SECRET:}
+  use-resource-role-mappings: true
+  bearer-only: true
+
+# Observability
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: always
+        include: health,info,metrics,prometheus,tracing,loggers,caches
+      base-path: /management
+      path-mapping:
+        health: health-check
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 30s
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+    tags:
+      application: ${spring.application.name}
+      environment: ${PROFILE:dev}
+  tracing:
+    sampling:
+      probability: 0.1
+    propagation:
+      type: w3c
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_URL:http://localhost:9411/api/v2/spans}
 
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operations-sorter: method
+# Logging
+logging:
+  level:
+    com.nodeorb.scm: ${SCM_LOG_LEVEL:INFO}
+    org.springframework.security: ${SECURITY_LOG_LEVEL:WARN}
+    org.hibernate.SQL: ${SQL_LOG_LEVEL:WARN}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${SQL_BINDER_LOG_LEVEL:TRACE}
+    org.apache.kafka: ${KAFKA_LOG_LEVEL:WARN}
+  pattern:
+    console: "%d{ISO8601} [%thread] %-5level %logger{36} [traceId=%X{traceId}, spanId=%X{spanId}] - %msg%n"
+    file: "%d{ISO8601} [%thread] %-5level %logger{36} [traceId=%X{traceId}, spanId=%X{spanId}] - %msg%n"
+  file:
+    name: /var/log/scm-service/app.log
+    max-size: 100MB
+    max-history: 30
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /scm
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json,application/xml
+    min-response-size: 1024
+  ssl:
+    enabled: ${ENABLE_SSL:false}
+    key-store: classpath:keystore.p12
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:}
+    key-store-type: PKCS12
+    key-alias: scm-service
+  forward-headers-strategy: framework
+  shutdown: graceful
+
+# Application-specific configuration
+scm:
+  worm:
+    hash-algorithm: SHA3-256
+    anchor-frequency: PT1H
+    public-anchor:
+      enabled: true
+      service: https://anchor.nodeorb.com 
+      api-key: ${ANCHOR_API_KEY:}
+  validation:
+    deviation-thresholds:
+      green: 0.15
+      yellow: 0.40
+      red: 0.60
+    market-data:
+      refresh-interval: PT5M
+      cache-ttl: PT10M
+  biometrics:
+    webauthn:
+      rp-id: ${WEBAUTHN_RP_ID:nodeorb.com}
+      rp-name: Nodeorb SCM
+      attestation: direct
+      timeout: 120000

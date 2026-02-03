@@ -1,0 +1,19 @@
+FROM gradle:8.5-jdk17
+
+WORKDIR /app
+
+# Copy build files
+COPY build.gradle.kts .
+COPY settings.gradle.kts .
+COPY gradle.properties .
+COPY gradle/ ./gradle/
+COPY src/ ./src/
+
+# Build the project
+RUN ./gradlew clean build -x test
+
+# Copy the built JAR to a known location
+RUN cp build/libs/freight-marketplace-0.1.0-SNAPSHOT.jar /app/freight-marketplace-0.1.0-SNAPSHOT.jar
+
+# Output the JAR
+CMD ["ls", "-la", "/app/freight-marketplace-0.1.0-SNAPSHOT.jar"]

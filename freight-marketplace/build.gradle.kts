@@ -24,16 +24,15 @@ dependencies {
     implementation("org.postgresql:postgresql:42.6.0")
     implementation("org.flywaydb:flyway-core:8.5.13")
     
-    // Spatial/Geospatial dependencies
-    implementation("org.hibernate.orm:hibernate-spatial:6.4.1.Final")
-    implementation("net.postgis:postgis-jdbc:2023.1.0")
-    implementation("org.locationtech.jts:jts-core:1.19.0")
     
     // Kafka
     implementation("org.springframework.kafka:spring-kafka:3.3.0")
     
-    // Spring Cloud
-    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.0.0")
+    // LocationTech JTS для работы с геометрией
+    implementation("org.locationtech.jts:jts-core:1.19.0")
+    
+    // Spring Cloud (временно отключено из-за конфликтов с Spring Boot 4.0.2)
+    // implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")

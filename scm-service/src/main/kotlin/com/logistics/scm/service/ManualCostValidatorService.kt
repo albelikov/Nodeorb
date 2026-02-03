@@ -3,6 +3,7 @@ package com.logistics.scm.service
 import com.logistics.scm.dao.ManualEntryValidationDAO
 import com.logistics.scm.dao.MarketPriceDAO
 import com.logistics.scm.service.FraudDetectionEngine
+import com.logistics.scm.service.GeoSecurityService
 import com.logistics.scm.validation.ManualEntryRequest
 import com.logistics.scm.validation.ValidationResult
 import io.grpc.Status
@@ -13,26 +14,46 @@ import java.math.RoundingMode
 class ManualCostValidatorService(
     private val marketPriceDAO: MarketPriceDAO,
     private val validationDAO: ManualEntryValidationDAO,
-    private val fraudDetectionEngine: FraudDetectionEngine? = null
+    private val fraudDetectionEngine: FraudDetectionEngine? = null,
+    private val geoSecurityService: GeoSecurityService? = null
 ) {
     
     enum class RiskVerdict {
         GREEN, YELLOW, RED
     }
     
-    fun validateAndSign(orderId: String, category: String, inputValue: BigDecimal): ValidationResult {
-        // Крок 1: Отримати medianValue з таблиці market_price_medians
+    fun validateAndSign(orderId: String, category: String, inputValue: BigDecimal, lat: Double = 0.0, lon: Double = 0.0): ValidationResult {
+        // Крок 1: Geo Security Verification (NEW - First step)
+        val geoResult = performGeoSecurityVerification(orderId, lat, lon)
+        
+        // Check for geofencing violation (RED verdict regardless of cost)
+        if (!geoResult.geoVerified) {
+            throw StatusRuntimeException(
+                Status.PERMISSION_DENIED
+                    .withDescription("Location verification failed. Distance from expected location exceeds 500 meters.")
+            )
+        }
+        
+        // Check for spoofing or VPN (RED verdict)
+        if (geoResult.spoofingDetected || geoResult.vpnDetected) {
+            throw StatusRuntimeException(
+                Status.PERMISSION_DENIED
+                    .withDescription("Security violation detected: ${if (geoResult.spoofingDetected) "Location spoofing" else "VPN/Proxy usage"}")
+            )
+        }
+        
+        // Крок 2: Отримати medianValue з таблиці market_price_medians
         val medianValue = marketPriceDAO.getMedian(category, "default_region")
             ?: BigDecimal("100.0") // Default median if not found
         
-        // Крок 2: Розрахувати відхилення
+        // Крок 3: Розрахувати відхилення
         val deviation = calculateDeviation(medianValue, inputValue)
         
-        // Крок 3: Fraud Detection Analysis (NEW)
+        // Крок 4: Fraud Detection Analysis
         val userId = extractUserId(orderId)
         val fraudAnalysis = performFraudDetection(userId, deviation)
         
-        // Крок 4: Визначити вердикт (RiskVerdict)
+        // Крок 5: Визначити вердикт (RiskVerdict)
         val verdict = determineVerdict(deviation, fraudAnalysis)
         val status = when (verdict) {
             RiskVerdict.GREEN -> "APPROVED"
@@ -40,7 +61,7 @@ class ManualCostValidatorService(
             RiskVerdict.RED -> "REJECTED"
         }
         
-        // Крок 5: Збереження з хешуванням
+        // Крок 6: Збереження з хешуванням
         val recordHash = validationDAO.saveValidation(
             orderId = orderId,
             inputValue = inputValue,
@@ -48,10 +69,10 @@ class ManualCostValidatorService(
             verdict = verdict.name
         )
         
-        // Крок 6: Handle fraud detection alerts and trust score updates
+        // Крок 7: Handle fraud detection alerts and trust score updates
         handleFraudDetectionAlerts(userId, orderId, fraudAnalysis, deviation)
         
-        // Крок 7: Обробка відхилень (gRPC Exception)
+        // Крок 8: Обробка відхилень (gRPC Exception)
         if (verdict == RiskVerdict.RED) {
             throw StatusRuntimeException(
                 Status.PERMISSION_DENIED
@@ -59,7 +80,7 @@ class ManualCostValidatorService(
             )
         }
         
-        // Крок 8: Повернення результату
+        // Крок 9: Повернення результату
         return ValidationResult.newBuilder()
             .setStatus(status)
             .setDeviation(deviation)
@@ -187,5 +208,30 @@ class ManualCostValidatorService(
     
     fun getValidationHistory(orderId: String): List<com.logistics.scm.dao.ValidationRecord> {
         return validationDAO.getValidationHistory(orderId)
+    }
+    
+    private fun performGeoSecurityVerification(orderId: String, lat: Double, lon: Double): GeoSecurityService.GeoVerificationResult {
+        return try {
+            geoSecurityService?.verifyLocation(orderId, lat, lon)
+                ?: GeoSecurityService.GeoVerificationResult(
+                    geoVerified = true,
+                    distanceMeters = 0.0,
+                    spoofingDetected = false,
+                    vpnDetected = false,
+                    riskLevel = GeoSecurityService.RiskLevel.LOW,
+                    verificationTimestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                )
+        } catch (e: Exception) {
+            // Log error but don't fail validation
+            println("Geo security verification failed for order $orderId: ${e.message}")
+            GeoSecurityService.GeoVerificationResult(
+                geoVerified = true, // Allow validation to proceed if geo service fails
+                distanceMeters = 0.0,
+                spoofingDetected = false,
+                vpnDetected = false,
+                riskLevel = GeoSecurityService.RiskLevel.LOW,
+                verificationTimestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            )
+        }
     }
 }

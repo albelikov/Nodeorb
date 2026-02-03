@@ -8,6 +8,7 @@ option java_outer_classname = "ValidationProto";
 
 service ValidationService {
   rpc ValidateCost(CostRequest) returns (CostResponse);
+  rpc CheckManualEntry(ManualEntryRequest) returns (ValidationResult);
 }
 
 message CostRequest {
@@ -19,4 +20,17 @@ message CostRequest {
 message CostResponse {
   string status = 1; // "APPROVED", "AUDIT_REQUIRED", "REJECTED"
   double deviation = 2;
+}
+
+message ManualEntryRequest {
+  string order_id = 1;
+  string category = 2; // "materials" or "labor"
+  double input_value = 3;
+}
+
+message ValidationResult {
+  string status = 1; // "APPROVED", "AUDIT_REQUIRED", "REJECTED"
+  double deviation = 2;
+  string record_hash = 3;
+  string audit_priority = 4; // "high" for YELLOW verdict
 }

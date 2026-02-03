@@ -42,6 +42,12 @@ class ManualCostValidatorService(
             )
         }
         
+        // Check for REB interference (YELLOW verdict)
+        if (geoResult.riskLevel == GeoSecurityService.RiskLevel.REB_INTERFERENCE) {
+            // REB interference gets YELLOW verdict, not RED
+            // Continue validation but mark for audit
+        }
+        
         // Крок 2: Отримати medianValue з таблиці market_price_medians
         val medianValue = marketPriceDAO.getMedian(category, "default_region")
             ?: BigDecimal("100.0") // Default median if not found

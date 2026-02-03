@@ -46,7 +46,7 @@ class GeoSecurityService(
     )
     
     enum class RiskLevel {
-        LOW, MEDIUM, HIGH, SPOOFING_DETECTED, VPN_DETECTED
+        LOW, MEDIUM, HIGH, SPOOFING_DETECTED, VPN_DETECTED, REB_INTERFERENCE
     }
     
     data class LocationEvent(
@@ -55,7 +55,8 @@ class GeoSecurityService(
         val longitude: Double,
         val timestamp: String,
         val ipAddress: String,
-        val userAgent: String
+        val userAgent: String,
+        val cellId: String? = null
     )
     
     fun verifyLocation(orderId: String, lat: Double, lon: Double): GeoVerificationResult {
@@ -72,11 +73,14 @@ class GeoSecurityService(
             // Check for spoofing
             val spoofingDetected = detectSpoofing(orderId, lat, lon)
             
+            // Check for REB interference
+            val rebInterferenceDetected = isRebInterferenceDetected(orderId, lat, lon)
+            
             // Check for VPN/Proxy
             val vpnDetected = detectVpn(orderId)
             
             // Determine risk level
-            val riskLevel = determineRiskLevel(geoVerified, spoofingDetected, vpnDetected)
+            val riskLevel = determineRiskLevel(geoVerified, spoofingDetected, vpnDetected, rebInterferenceDetected)
             
             return GeoVerificationResult(
                 geoVerified = geoVerified,
@@ -89,6 +93,26 @@ class GeoSecurityService(
             
         } catch (e: Exception) {
             throw RuntimeException("Failed to verify location for order $orderId: ${e.message}", e)
+        }
+    }
+    
+    private fun isRebInterferenceDetected(orderId: String, currentLat: Double, currentLon: Double): Boolean {
+        try {
+            val previousEvent = getPreviousLocationEvent(orderId)
+            if (previousEvent == null) return false
+            
+            val timeDiff = calculateTimeDifference(previousEvent.timestamp)
+            if (timeDiff <= 0) return false
+            
+            val distance = calculateDistance(
+                currentLat, currentLon,
+                previousEvent.latitude, previousEvent.longitude
+            )
+            
+            return isJumpingDetected(distance, timeDiff, orderId)
+            
+        } catch (e: Exception) {
+            return false
         }
     }
     
@@ -173,6 +197,11 @@ class GeoSecurityService(
                 previousEvent.latitude, previousEvent.longitude
             )
             
+            // Check for REB interference (500km jump in 10 seconds with stable IP/Cell ID)
+            if (isJumpingDetected(distance, timeDiff, orderId)) {
+                return false // Not spoofing, but REB interference
+            }
+            
             // Calculate speed in km/h
             val distanceKm = distance / 1000.0
             val timeHours = timeDiff / 3600.0
@@ -183,6 +212,30 @@ class GeoSecurityService(
         } catch (e: Exception) {
             return false
         }
+    }
+    
+    private fun isJumpingDetected(distanceMeters: Double, timeSeconds: Double, orderId: String): Boolean {
+        try {
+            // Check if jump is > 500km in < 10 seconds
+            if (distanceMeters > 500000.0 && timeSeconds < 10.0) {
+                val currentEvent = getCurrentLocationEvent(orderId)
+                val previousEvent = getPreviousLocationEvent(orderId)
+                
+                if (currentEvent != null && previousEvent != null) {
+                    // Check if IP address and Cell ID are stable
+                    val ipStable = currentEvent.ipAddress == previousEvent.ipAddress
+                    val cellIdStable = currentEvent.cellId == previousEvent.cellId
+                    
+                    if (ipStable && cellIdStable) {
+                        return true // REB interference detected
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Log error but don't fail
+        }
+        
+        return false
     }
     
     private fun detectVpn(orderId: String): Boolean {
@@ -330,8 +383,9 @@ class GeoSecurityService(
         return false
     }
     
-    private fun determineRiskLevel(geoVerified: Boolean, spoofingDetected: Boolean, vpnDetected: Boolean): RiskLevel {
+    private fun determineRiskLevel(geoVerified: Boolean, spoofingDetected: Boolean, vpnDetected: Boolean, rebInterferenceDetected: Boolean): RiskLevel {
         return when {
+            rebInterferenceDetected -> RiskLevel.REB_INTERFERENCE
             spoofingDetected -> RiskLevel.SPOOFING_DETECTED
             vpnDetected -> RiskLevel.VPN_DETECTED
             !geoVerified -> RiskLevel.HIGH

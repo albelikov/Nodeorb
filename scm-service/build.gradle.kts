@@ -40,6 +40,9 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
     
+    // Statistical analysis
+    implementation("org.apache.commons:commons-math3:3.6.1")
+    
     // Logging
     implementation("ch.qos.logback:logback-classic:1.4.11")
     implementation("org.slf4j:slf4j-api:2.0.9")

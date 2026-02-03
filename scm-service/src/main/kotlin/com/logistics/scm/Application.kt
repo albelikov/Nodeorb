@@ -1,7 +1,9 @@
 package com.logistics.scm
 
 import com.logistics.scm.grpc.ValidationServiceImpl
+import com.logistics.scm.grpc.AppealServiceImpl
 import com.logistics.scm.validation.ValidationServiceGrpc
+import com.logistics.scm.validation.AppealServiceGrpc
 import io.grpc.ServerBuilder
 import io.grpc.protobuf.services.ProtoReflectionService
 import org.jetbrains.exposed.sql.Database
@@ -23,6 +25,7 @@ fun main() {
     val server = ServerBuilder
         .forPort(8080)
         .addService(ValidationServiceImpl())
+        .addService(AppealServiceImpl())
         .addService(ProtoReflectionService.newInstance())
         .build()
     

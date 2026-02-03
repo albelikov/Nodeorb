@@ -11,6 +11,12 @@ service ValidationService {
   rpc CheckManualEntry(ManualEntryRequest) returns (ValidationResult);
 }
 
+service AppealService {
+  rpc SubmitAppeal(AppealRequest) returns (AppealResponse);
+  rpc GetAppeal(AppealQuery) returns (AppealResult);
+  rpc UpdateAppealStatus(AppealUpdateRequest) returns (AppealUpdateResponse);
+}
+
 message CostRequest {
   string order_id = 1;
   string category = 2; // "materials" or "labor"
@@ -33,4 +39,42 @@ message ValidationResult {
   double deviation = 2;
   string record_hash = 3;
   string audit_priority = 4; // "high" for YELLOW verdict
+}
+
+message AppealRequest {
+  string record_hash = 1;
+  string justification = 2;
+  string evidence_url = 3;
+}
+
+message AppealResponse {
+  string appeal_id = 1;
+  string record_hash = 2;
+  string status = 3; // "PENDING", "APPROVED", "REJECTED"
+  string message = 4;
+}
+
+message AppealQuery {
+  string record_hash = 1;
+}
+
+message AppealResult {
+  string appeal_id = 1;
+  string record_hash = 2;
+  string justification = 3;
+  string evidence_url = 4;
+  string status = 5; // "PENDING", "APPROVED", "REJECTED"
+  string created_at = 6;
+}
+
+message AppealUpdateRequest {
+  string appeal_id = 1;
+  string status = 2; // "APPROVED", "REJECTED"
+  string review_notes = 3;
+}
+
+message AppealUpdateResponse {
+  string appeal_id = 1;
+  string status = 2;
+  string message = 3;
 }

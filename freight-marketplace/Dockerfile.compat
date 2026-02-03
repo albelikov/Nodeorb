@@ -1,0 +1,12 @@
+FROM freight-marketplace:latest
+
+# Установите совместимые версии библиотек
+USER root
+RUN mkdir -p /app/compat-libs
+
+# Скачайте совместимые JAR-файлы
+ADD https://repo1.maven.org/maven2/org/hibernate/orm/hibernate-core/7.0.0.Alpha2/hibernate-core-7.0.0.Alpha2.jar /app/compat-libs/
+ADD https://repo1.maven.org/maven2/org/hibernate/hibernate-spatial/7.0.0.Alpha2/hibernate-spatial-7.0.0.Alpha2.jar /app/compat-libs/
+
+# Обновите classpath
+ENTRYPOINT ["java", "-cp", "/app/compat-libs/*:/app/app.jar", "org.springframework.boot.loader.PropertiesLauncher"]

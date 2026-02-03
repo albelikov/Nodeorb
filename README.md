@@ -68,8 +68,50 @@ cd service-name && ./gradlew bootRun
 ```
 
 ### Запуск в Docker
+
+#### Основная система
 ```bash
+# Запустить всю основную систему (SCM, OMS, WMS, FMS, TMS, Admin)
 docker-compose up -d
+
+# Проверить статус
+docker-compose ps
+
+# Просмотреть логи
+docker-compose logs -f
+```
+
+#### Freight Marketplace
+```bash
+# Запустить marketplace отдельно
+docker-compose -f docker-compose.marketplace.yml up -d
+
+# Проверить статус marketplace
+docker-compose -f docker-compose.marketplace.yml ps
+
+# Просмотреть логи marketplace
+docker-compose -f docker-compose.marketplace.yml logs -f
+```
+
+#### Отдельные сервисы
+```bash
+# Запустить только SCM
+docker-compose up scm-service
+
+# Запустить только OMS
+docker-compose up oms-service
+
+# Запустить только WMS
+docker-compose up wms-service
+
+# Запустить только FMS
+docker-compose up fms-service
+
+# Запустить только TMS
+docker-compose up tms-service
+
+# Запустить только Admin Backend
+docker-compose up admin-backend
 ```
 
 ## Требования к безопасности

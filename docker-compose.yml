@@ -198,6 +198,7 @@ services:
       WMS_SERVICE_URL: http://wms-service:8080
       FMS_SERVICE_URL: http://fms-service:8080
       TMS_SERVICE_URL: http://tms-service:8080
+      KEYCLOAK_URL: http://localhost:8086
     ports:
       - "8080:8080"
     networks:

@@ -1,4 +1,4 @@
-package com.nodeorb.scm
+package com
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

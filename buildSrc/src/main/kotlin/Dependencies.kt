@@ -36,7 +36,7 @@ object Versions {
     const val springKafka = "3.3.0"
 
     // Geographic Information Systems
-    const val hibernateSpatial = "6.4.1.Final"
+    const val hibernateSpatial = "6.6.1.Final"
     const val postgis = "2023.1.0"
     const val jts = "1.19.0"
     const val mockk = "1.13.8"

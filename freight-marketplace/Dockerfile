@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Копируем JAR-файл
-COPY build/libs/freight-marketplace-0.1.0-SNAPSHOT.jar app.jar
+COPY freight-marketplace/build/libs/freight-marketplace-0.1.0-SNAPSHOT.jar app.jar
 
 # Запускаем приложение
 CMD ["java", "-jar", "app.jar"]

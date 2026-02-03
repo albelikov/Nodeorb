@@ -1,11 +1,20 @@
+# SCM-Service Configuration
+# Центральный узел безопасности для экосистемы Nodeorb
+
+server:
+  port: 8081
+  servlet:
+    context-path: /scm
+
 spring:
   application:
     name: scm-service
   
+  # Database Configuration
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/scm_db}
-    username: ${SPRING_DATASOURCE_USERNAME:nodeorb}
-    password: ${SPRING_DATASOURCE_PASSWORD:nodeorb_dev_password}
+    url: jdbc:postgresql://localhost:5432/scm_db
+    username: ${DB_USERNAME:scm_user}
+    password: ${DB_PASSWORD:scm_password}
     driver-class-name: org.postgresql.Driver
   
   jpa:
@@ -16,41 +25,157 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-    open-in-view: false
   
-  jackson:
-    serialization:
-      write-dates-as-timestamps: false
-    default-property-inclusion: non_null
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      linger-ms: 5
+      buffer-memory: 33554432
+    consumer:
+      group-id: scm-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: latest
+      enable-auto-commit: true
+      auto-commit-interval: 1000
+  
+  # Redis Configuration (for caching)
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    database: 0
+  
+  # Security Configuration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/auth/realms/nodeorb
+          jwk-set-uri: http://localhost:8080/auth/realms/nodeorb/protocol/openid-connect/certs
+  
+  # ClickHouse Configuration (for WORM storage)
+  clickhouse:
+    url: jdbc:clickhouse://localhost:8123/scm_audit
+    username: ${CLICKHOUSE_USERNAME:default}
+    password: ${CLICKHOUSE_PASSWORD:}
+  
+  # Logging Configuration
+  logging:
+    level:
+      com: DEBUG
+      org.springframework.security: DEBUG
+      org.apache.kafka: WARN
+    pattern:
+      console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+      file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file:
+      name: logs/scm-service.log
+  
+  # Cache Configuration
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000 # 10 minutes
+      cache-null-values: false
+  
+  # Actuator Configuration
+  actuator:
+    endpoints:
+      web:
+        exposure:
+          include: health,info,metrics,env,beans,cache,threaddump
+    endpoint:
+      health:
+        show-details: when_authorized
+        roles: ADMIN
+      metrics:
+        enabled: true
 
-server:
-  port: 8080
-  error:
-    include-message: always
-    include-binding-errors: always
+# gRPC Configuration
+grpc:
+  server:
+    port: 9090
+    enableKeepAlive: true
+    keepAliveTime: 30000
+    keepAliveTimeout: 5000
+    maxConnectionIdle: 300000
+    maxConnectionAge: 7200000
+    maxConnectionAgeGrace: 300000
+    permitKeepAliveTime: 30000
+    permitKeepAliveWithoutCalls: true
 
-jwt:
-  secret: ${JWT_SECRET:defaultSecretKeyThatShouldBeChangedInProductionAndMustBeAtLeast256BitsLong}
-  expiration: 86400000  # 24 hours
+# Custom SCM Configuration
+scm:
+  policy:
+    default-trust-score: 50.0
+    max-price-deviation-green: 0.15
+    max-price-deviation-yellow: 0.40
+    appeal-timeout-minutes: 1440 # 24 hours
+    biometric-required-threshold: 0.40
+  
+  security:
+    event-bus:
+      enabled: true
+      topic-security-events: security.events
+      topic-audit-logs: audit.logs
+      topic-threat-intelligence: threat.intelligence
+    
+    geofencing:
+      enabled: true
+      default-radius-meters: 500
+      violation-threshold-minutes: 10
+    
+    eld:
+      enabled: true
+      max-driving-hours: 11
+      mandatory-break-hours: 8
+      daily-limit-hours: 14
+  
+  audit:
+    worm-storage:
+      enabled: true
+      clickhouse-table: scm_audit_log
+      hash-chaining: true
+      anchoring-interval-minutes: 60
+  
+  compliance:
+    passport:
+      default-expiration-days: 365
+      verification-required: true
+      biometrics-required: false
+      license-check-interval-days: 30
 
-logging:
-  level:
-    com.nodeorb: DEBUG
-    org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
-
+# Management Configuration
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
+  server:
+    port: 8082
   endpoint:
     health:
       show-details: always
-
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operations-sorter: method
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env,beans,cache,threaddump
+  health:
+    kafka:
+      enabled: true
+    redis:
+      enabled: true
+    db:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 60s
+    tags:
+      application: scm-service
+      version: ${spring.application.version:1.0.0}
+      environment: ${spring.profiles.active:dev}

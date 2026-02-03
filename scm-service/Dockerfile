@@ -1,40 +1,50 @@
-# ЭТАП 1: Сборка
-FROM gradle:9.3.0-jdk21 AS build
+# SCM-Service Dockerfile
+# Многоступенчатая сборка для оптимизации размера образа
+
+# Stage 1: Build stage
+FROM gradle:8.5-jdk17 AS builder
+
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# 1. Копируем файлы управления
-COPY gradlew .
-COPY gradle gradle
-COPY settings.gradle.kts .
+# Копируем файлы сборки
 COPY build.gradle.kts .
-COPY buildSrc buildSrc
+COPY settings.gradle.kts .
+COPY gradle.properties .
+COPY gradle/ ./gradle/
+COPY gradlew .
+COPY gradlew.bat .
 
-# 2. Создаем ПУСТЫЕ директории для ВСЕХ модулей, упомянутых в settings
-# Эта команда берет все строки с include, очищает их от кавычек и скобок
-# и создает папки, чтобы Gradle был доволен.
-RUN grep "include" settings.gradle.kts | tr -d '()", ' | sed 's/include//' | xargs mkdir -p
+# Копируем исходный код
+COPY src/ ./src/
 
-# На всякий случай добавим те, что уже вылетали:
-RUN mkdir -p freight-marketplace wms-service fms-service tms-service admin-backend admin-frontend common
-# 3. Копируем реальный код только для нужного сервиса
-COPY scm-service scm-service
+# Собираем приложение
+RUN ./gradlew clean build -x test
 
-# 4. Подготовка gradlew
-RUN apt-get update && apt-get install -y dos2unix && \
-    dos2unix gradlew && chmod +x gradlew
+# Stage 2: Runtime stage
+FROM eclipse-temurin:17-jre-jammy
 
-# 5. Сборка
-RUN ./gradlew :scm-service:bootJar -x test --no-daemon
-
-# ЭТАП 2: Запуск
-FROM eclipse-temurin:21-jre-jammy
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-COPY --from=build /app/scm-service/build/libs/*.jar app.jar
+# Копируем JAR файл из stage 1
+COPY --from=builder /app/build/libs/scm-service-*.jar app.jar
 
-RUN groupadd -r nodeorb && useradd -r -g nodeorb nodeorb && \
-    chown -R nodeorb:nodeorb /app
-USER nodeorb
+# Устанавливаем переменные окружения
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
+ENV SPRING_PROFILES_ACTIVE=docker
 
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Открываем порты
+EXPOSE 8081 9090 8082
+
+# Запускаем приложение
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:8081/scm/health || exit 1
+
+# Labels for metadata
+LABEL maintainer="Nodeorb Team <dev@nodeorb.com>"
+LABEL version="1.0.0"
+LABEL description="SCM-Service: Security & Compliance Management for Nodeorb Ecosystem"

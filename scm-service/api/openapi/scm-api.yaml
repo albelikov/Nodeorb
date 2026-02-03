@@ -1,0 +1,897 @@
+openapi: 3.0.3
+info:
+  title: SCM Security & Compliance API
+  description: API для управления безопасностью и соответствием требованиям в логистической экосистеме Nodeorb
+  version: 1.0.0
+  contact:
+    name: Nodeorb Team
+    email: support@nodeorb.com
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: https://scm.nodeorb.com
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    EvaluateAccessRequest:
+      type: object
+      required:
+        - user_id
+        - service_id
+        - action
+      properties:
+        user_id:
+          type: string
+          description: Идентификатор пользователя
+        service_id:
+          type: string
+          description: Идентификатор сервиса (например, "freight-marketplace")
+        action:
+          type: string
+          description: Действие (например, "place_bid", "view_itar_cargo")
+        context:
+          type: object
+          additionalProperties:
+            type: string
+          description: Контекст выполнения действия
+          example:
+            cargo_type: "ADR"
+            price: "5000"
+            order_id: "ORD-12345"
+
+    EvaluateAccessResponse:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+          description: Разрешено ли действие
+        decision_id:
+          type: string
+          description: Идентификатор решения для аудита
+        reason:
+          type: string
+          description: Причина отказа (если allowed = false)
+        risk_level:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+          description: Уровень риска
+        requires_biometrics:
+          type: boolean
+          description: Требуется биометрическая проверка
+        requires_appeal:
+          type: boolean
+          description: Требуется апелляция
+
+    ValidateManualInputRequest:
+      type: object
+      required:
+        - user_id
+        - order_id
+        - materials_cost
+        - labor_cost
+        - currency
+      properties:
+        user_id:
+          type: string
+          description: Идентификатор пользователя
+        order_id:
+          type: string
+          description: Идентификатор заказа
+        service_source:
+          type: string
+          default: "freight-marketplace"
+          description: Источник запроса
+        materials_cost:
+          type: number
+          format: double
+          description: Стоимость материалов
+        labor_cost:
+          type: number
+          format: double
+          description: Стоимость работ
+        currency:
+          type: string
+          default: "USD"
+          description: Валюта
+
+    ValidateManualInputResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [GREEN, YELLOW, RED]
+          description: Статус валидации
+        risk_score:
+          type: number
+          format: double
+          description: Оценка риска (0.0 - 1.0)
+        requires_appeal:
+          type: boolean
+          description: Требуется апелляция
+        requires_biometrics:
+          type: boolean
+          description: Требуется биометрическая проверка
+        suggested_median:
+          type: number
+          format: double
+          description: Предложенная медианная цена
+        comment:
+          type: string
+          description: Комментарий к решению
+
+    CompliancePassport:
+      type: object
+      properties:
+        user_id:
+          type: string
+        entity_type:
+          type: string
+          enum: [CARRIER, SHIPPER, WAREHOUSE]
+        trust_score:
+          type: number
+          format: double
+        compliance_status:
+          type: string
+          enum: [VERIFIED, SUSPENDED, BLACKLISTED]
+        is_biometrics_enabled:
+          type: boolean
+        verification_data:
+          type: object
+          description: Данные о верификации
+        expires_at:
+          type: string
+          format: date-time
+
+    CreateAppealRequest:
+      type: object
+      required:
+        - validation_id
+        - user_justification
+      properties:
+        validation_id:
+          type: string
+          description: Идентификатор валидации
+        user_justification:
+          type: string
+          description: Обоснование пользователя
+        evidence_links:
+          type: array
+          items:
+            type: string
+          description: Ссылки на доказательства
+        bio_session_id:
+          type: string
+          description: Идентификатор биометрической сессии
+
+    CreateAppealResponse:
+      type: object
+      properties:
+        appeal_id:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+
+    VerifyBiometricsRequest:
+      type: object
+      required:
+        - user_id
+        - biometric_data
+      properties:
+        user_id:
+          type: string
+        biometric_data:
+          type: string
+          description: WebAuthn данные
+        session_id:
+          type: string
+
+    VerifyBiometricsResponse:
+      type: object
+      properties:
+        verified:
+          type: boolean
+        verification_id:
+          type: string
+        reason:
+          type: string
+
+    CheckGeofenceRequest:
+      type: object
+      required:
+        - user_id
+        - latitude
+        - longitude
+        - geofence_type
+      properties:
+        user_id:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        geofence_type:
+          type: string
+          enum: [WAREHOUSE, ROUTE, DELIVERY_ZONE]
+
+    CheckGeofenceResponse:
+      type: object
+      properties:
+        inside_geofence:
+          type: boolean
+        geofence_id:
+          type: string
+        violation_reason:
+          type: string
+
+    CheckHoursOfServiceRequest:
+      type: object
+      required:
+        - driver_id
+        - vehicle_id
+      properties:
+        driver_id:
+          type: string
+        vehicle_id:
+          type: string
+        current_time:
+          type: integer
+          format: int64
+
+    CheckHoursOfServiceResponse:
+      type: object
+      properties:
+        compliant:
+          type: boolean
+        remaining_hours:
+          type: integer
+          format: int32
+        next_required_break:
+          type: integer
+          format: int32
+        violation_reason:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+paths:
+  /api/v1/auth/sync-keycloak:
+    post:
+      summary: Синхронизация данных пользователя из Keycloak
+      description: Вызывается Keycloak при регистрации или изменении профиля пользователя
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                email:
+                  type: string
+                roles:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Успешная синхронизация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+
+  /api/v1/policies/manual-input-validation:
+    post:
+      summary: Валидация ручного ввода стоимости
+      description: Проверка введенных цен на материалы и работы через Market Oracle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateManualInputRequest'
+      responses:
+        '200':
+          description: Результат валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateManualInputResponse'
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compliance/passport/{user_id}:
+    get:
+      summary: Получение Compliance Passport пользователя
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entity_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [CARRIER, SHIPPER, WAREHOUSE]
+      responses:
+        '200':
+          description: Compliance Passport пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompliancePassport'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compliance/appeals:
+    post:
+      summary: Создание апелляции
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAppealRequest'
+      responses:
+        '200':
+          description: Апелляция создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAppealResponse'
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/security/biometrics/verify:
+    post:
+      summary: Проверка биометрической аутентификации
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyBiometricsRequest'
+      responses:
+        '200':
+          description: Результат биометрической проверки
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyBiometricsResponse'
+
+  /api/v1/security/geofence/check:
+    post:
+      summary: Проверка геозон
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckGeofenceRequest'
+      responses:
+        '200':
+          description: Результат проверки геозон
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckGeofenceResponse'
+
+  /api/v1/security/eld/check:
+    post:
+      summary: Проверка часов работы (ELD)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckHoursOfServiceRequest'
+      responses:
+        '200':
+          description: Результат проверки часов работы
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckHoursOfServiceResponse'
+
+  /api/v1/audit/worm/export:
+    get:
+      summary: Экспорт аудит-логов
+      parameters:
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: event_type
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Экспорт аудит-логов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  export_id:
+                    type: string
+                  download_url:
+                    type: string
+                  events_count:
+                    type: integer
+
+  /api/v1/compliance/validate-event:
+    post:
+      summary: Валидация ручного ввода событий (Market Median Oracle)
+      description: Проверка введенных стоимостей материалов и работ с рыночной медианой
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - order_id
+                - materials_cost
+                - labor_cost
+                - currency
+              properties:
+                user_id:
+                  type: string
+                  description: Идентификатор пользователя
+                order_id:
+                  type: string
+                  description: Идентификатор заказа
+                materials_cost:
+                  type: number
+                  format: double
+                  description: Стоимость материалов
+                labor_cost:
+                  type: number
+                  format: double
+                  description: Стоимость работ
+                currency:
+                  type: string
+                  default: "USD"
+                  description: Валюта
+      responses:
+        '200':
+          description: Результат валидации
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [GREEN, YELLOW, RED]
+                    description: Статус валидации
+                  risk_score:
+                    type: number
+                    format: double
+                    description: Оценка риска (0.0 - 1.0)
+                  requires_appeal:
+                    type: boolean
+                    description: Требуется апелляция
+                  requires_biometrics:
+                    type: boolean
+                    description: Требуется биометрическая проверка
+                  suggested_median:
+                    type: number
+                    format: double
+                    description: Предложенная медианная цена
+                  comment:
+                    type: string
+                    description: Комментарий к решению
+                  audit_required:
+                    type: boolean
+                    description: Флаг необходимости аудита при отклонении > 20%
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compliance/sanctions-check:
+    post:
+      summary: Проверка санкционных списков
+      description: Проверка контрагента по санкционным спискам OFAC/UN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - entity_id
+                - entity_type
+              properties:
+                entity_id:
+                  type: string
+                  description: Идентификатор контрагента
+                entity_type:
+                  type: string
+                  enum: [CARRIER, SHIPPER, WAREHOUSE]
+                  description: Тип контрагента
+      responses:
+        '200':
+          description: Результат проверки санкций
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  is_blocked:
+                    type: boolean
+                    description: Заблокирован ли контрагент
+                  sanction_lists:
+                    type: array
+                    items:
+                      type: string
+                    description: Списки, в которых найден контрагент
+                  confidence:
+                    type: number
+                    format: double
+                    description: Уверенность в результате (0.0 - 1.0)
+                  details:
+                    type: string
+                    description: Детали проверки
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compliance/denied-party-check:
+    post:
+      summary: Проверка Denied Party Screening
+      description: Проверка контрагента по Denied Party спискам
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - entity_id
+                - entity_type
+              properties:
+                entity_id:
+                  type: string
+                  description: Идентификатор контрагента
+                entity_type:
+                  type: string
+                  enum: [CARRIER, SHIPPER, WAREHOUSE]
+                  description: Тип контрагента
+      responses:
+        '200':
+          description: Результат проверки Denied Party
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  is_denied:
+                    type: boolean
+                    description: Запрещен ли контрагент
+                  denied_lists:
+                    type: array
+                    items:
+                      type: string
+                    description: Списки, в которых найден контрагент
+                  confidence:
+                    type: number
+                    format: double
+                    description: Уверенность в результате (0.0 - 1.0)
+                  details:
+                    type: string
+                    description: Детали проверки
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compliance/cargo-access:
+    post:
+      summary: Проверка доступа к грузу
+      description: Проверка доступа к деталям груза с учетом геозон
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - order_id
+                - device_latitude
+                - device_longitude
+                - cargo_latitude
+                - cargo_longitude
+              properties:
+                user_id:
+                  type: string
+                  description: Идентификатор пользователя
+                order_id:
+                  type: string
+                  description: Идентификатор заказа
+                device_latitude:
+                  type: number
+                  format: double
+                  description: Широта устройства
+                device_longitude:
+                  type: number
+                  format: double
+                  description: Долгота устройства
+                cargo_latitude:
+                  type: number
+                  format: double
+                  description: Широта груза
+                cargo_longitude:
+                  type: number
+                  format: double
+                  description: Долгота груза
+      responses:
+        '200':
+          description: Результат проверки доступа к грузу
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_granted:
+                    type: boolean
+                    description: Разрешен ли доступ
+                  is_within_route:
+                    type: boolean
+                    description: Находится ли устройство в пределах маршрута
+                  distance_to_cargo:
+                    type: number
+                    format: double
+                    description: Расстояние до груза в метрах
+                  violation_reason:
+                    type: string
+                    description: Причина отказа доступа
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compliance/evidence-package:
+    post:
+      summary: Генерация пакета доказательств
+      description: Создание пакета доказательств для страховых случаев
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - order_id
+              properties:
+                order_id:
+                  type: string
+                  description: Идентификатор заказа
+      responses:
+        '200':
+          description: Пакет доказательств создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  package_id:
+                    type: string
+                    description: Идентификатор пакета доказательств
+                  root_hash:
+                    type: string
+                    description: Корневой хэш пакета
+                  generated_at:
+                    type: string
+                    format: date-time
+                    description: Время генерации
+                  events_count:
+                    type: integer
+                    description: Количество событий
+                  validations_count:
+                    type: integer
+                    description: Количество валидаций
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compliance/evidence-package/{package_id}/verify:
+    get:
+      summary: Проверка целостности пакета доказательств
+      parameters:
+        - name: package_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Результат проверки целостности
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  is_verified:
+                    type: boolean
+                    description: Подтвержден ли пакет
+                  signature_valid:
+                    type: boolean
+                    description: Действительна ли подпись
+                  hash_chain_valid:
+                    type: boolean
+                    description: Действительна ли цепочка хэшей
+                  root_hash_valid:
+                    type: boolean
+                    description: Соответствует ли корневой хэш
+                  verification_time:
+                    type: string
+                    format: date-time
+                    description: Время проверки
+        '404':
+          description: Пакет не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compliance/trust-score/calculate:
+    post:
+      summary: Расчет динамического Trust Score
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: string
+                  description: Идентификатор пользователя
+      responses:
+        '200':
+          description: Результат расчета Trust Score
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trust_score:
+                    type: number
+                    format: double
+                    description: Уровень доверия (0.0 - 100.0)
+                  trust_level:
+                    type: string
+                    enum: [CRITICAL, LOW, MEDIUM, HIGH]
+                    description: Уровень доверия
+                  price_accuracy_score:
+                    type: number
+                    format: double
+                    description: Оценка точности цен
+                  appeal_success_score:
+                    type: number
+                    format: double
+                    description: Оценка успешности апелляций
+                  biometrics_compliance_score:
+                    type: number
+                    format: double
+                    description: Оценка биометрического соответствия
+                  geographic_compliance_score:
+                    type: number
+                    format: double
+                    description: Оценка географического соответствия
+                  time_factor_score:
+                    type: number
+                    format: double
+                    description: Временной фактор
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/compliance/trust-score/recommendations:
+    post:
+      summary: Получение рекомендаций по Trust Score
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+              properties:
+                user_id:
+                  type: string
+                  description: Идентификатор пользователя
+      responses:
+        '200':
+          description: Рекомендации по улучшению Trust Score
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recommendations:
+                    type: array
+                    items:
+                      type: string
+                    description: Список рекомендаций
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

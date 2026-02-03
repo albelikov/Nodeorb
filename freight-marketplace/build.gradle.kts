@@ -4,6 +4,21 @@ plugins {
     id("io.spring.dependency-management")
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+}
+
+kotlin {
+    jvmToolchain(25)
+}
+
+tasks.withType<JavaCompile> {
+    targetCompatibility = "25"
+    sourceCompatibility = "25"
+}
+
 springBoot {
     mainClass.set("com.nodeorb.freight.marketplace.FreightMarketplaceApplicationKt")
 }
@@ -23,6 +38,8 @@ dependencies {
     // Database
     implementation("org.postgresql:postgresql:42.6.0")
     implementation("org.flywaydb:flyway-core:8.5.13")
+    implementation("org.hibernate.orm:hibernate-core:6.6.1.Final")
+    implementation("org.hibernate:hibernate-spatial:6.6.1.Final")
     
     
     // Kafka

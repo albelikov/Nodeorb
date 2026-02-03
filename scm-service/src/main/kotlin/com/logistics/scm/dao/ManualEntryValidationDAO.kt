@@ -31,6 +31,21 @@ class ManualEntryValidationDAO {
         }
     }
     
+    /**
+     * Function to search for the last hash in the table before writing a new event.
+     * This ensures proper hash chaining for WORM storage integrity.
+     */
+    fun getLastHashInTable(): String? {
+        return transaction {
+            ManualEntryValidation
+                .select(ManualEntryValidation.currentHash)
+                .orderBy(ManualEntryValidation.createdAt to SortOrder.DESC)
+                .limit(1)
+                .map { it[ManualEntryValidation.currentHash] }
+                .firstOrNull()
+        }
+    }
+    
     fun saveValidation(orderId: String, inputValue: BigDecimal, deviation: Double, verdict: String): String {
         return transaction {
             val previousHash = getLatestHash()

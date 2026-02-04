@@ -103,7 +103,11 @@ data class BidEntity(
     @Column(nullable = false)
     var status: BidStatus = BidStatus.PENDING,
     
-    var score: Double? = null,
+    @Column(precision = 5, scale = 2)
+    var matchingScore: Double? = null,
+    
+    @Column(columnDefinition = "TEXT")
+    var scoreBreakdown: String? = null,
     
     @CreationTimestamp
     @Column(nullable = false)

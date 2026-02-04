@@ -67,6 +67,17 @@ interface BidRepository : JpaRepository<BidEntity, UUID> {
         AND b.status = 'ACCEPTED'
     """)
     fun countAcceptedBidsByCarrier(@Param("carrierId") carrierId: UUID): Long
+    
+    /**
+     * Находит ставки для расчета рыночной медианы цен
+     */
+    @Query("""
+        SELECT b FROM BidEntity b 
+        WHERE b.freightOrder.id = :orderId 
+        AND b.status IN ('PENDING', 'ACCEPTED')
+        ORDER BY b.amount
+    """)
+    fun findSimilarBids(@Param("orderId") orderId: UUID): List<BidEntity>
 }
 
 interface UserProfileRepository : JpaRepository<UserProfileEntity, UUID> {

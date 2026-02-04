@@ -1,63 +1,113 @@
-# Freight Marketplace Service Configuration
+# Escrow Service Configuration
+
 spring:
   application:
     name: freight-marketplace
-
-  profiles:
-    active: development
-
+  
+  # Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/freight_marketplace
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5432/escrow_db
+    username: ${DB_USERNAME:escrow_user}
+    password: ${DB_PASSWORD:escrow_password}
     driver-class-name: org.postgresql.Driver
-
+  
   jpa:
     hibernate:
       ddl-auto: update
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-    show-sql: true
-
+  
+  # Kafka Configuration
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      linger-ms: 5
+      buffer-memory: 33554432
     consumer:
+      group-id: escrow-service
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: latest
+      enable-auto-commit: true
+      auto-commit-interval: 1000
+  
+  # Jackson Configuration
+  jackson:
+    date-format: com.fasterxml.jackson.databind.util.ISO8601DateFormat
+    time-zone: UTC
 
+# Server Configuration
 server:
-  port: 8084
+  port: ${SERVER_PORT:8083}
+  servlet:
+    context-path: /api/v1
 
+# Logging Configuration
 logging:
   level:
-    com.nodeorb.freight.marketplace: DEBUG
-    org.springframework.security: DEBUG
+    com.nodeorb.escrow: INFO
+    org.springframework.kafka: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/escrow-service.log
 
-freight:
-  marketplace:
-    auction:
-      bid-expiration-hours: 24
-      max-bids-per-order: 10
-      auto-award-threshold: 0.8
-    matching:
-      algorithm: weighted
-      price-weight: 0.4
-      reputation-weight: 0.3
-      proximity-weight: 0.3
-      min-match-score: 0.6
-    notification:
-      email-enabled: true
-      push-enabled: true
-      web-socket-enabled: true
+# Custom Configuration
+kafka:
+  topics:
+    contract-status-changed: ${KAFKA_TOPIC_CONTRACT_STATUS_CHANGED:contract.status.changed}
+    funds-locked: ${KAFKA_TOPIC_FUNDS_LOCKED:finance.escrow.locked}
+    funds-released: ${KAFKA_TOPIC_FUNDS_RELEASED:finance.escrow.released}
+    contract-cancelled: ${KAFKA_TOPIC_CONTRACT_CANCELLED:contract.cancelled}
+    bid-awarded: ${KAFKA_TOPIC_BID_AWARDED:bid.awarded}
+    bid-award-cancelled: ${KAFKA_TOPIC_BID_AWARD_CANCELLED:bid.award.cancelled}
+    shipment-confirmed: ${KAFKA_TOPIC_SHIPMENT_CONFIRMED:shipment.confirmed}
+    delivery-confirmed: ${KAFKA_TOPIC_DELIVERY_CONFIRMED:delivery.confirmed}
+    payment-released: ${KAFKA_TOPIC_PAYMENT_RELEASED:payment.released}
+    dispute-initiated: ${KAFKA_TOPIC_DISPUTE_INITIATED:dispute.initiated}
+    dispute-resolved: ${KAFKA_TOPIC_DISPUTE_RESOLVED:dispute.resolved}
+    notifications: ${KAFKA_TOPIC_NOTIFICATIONS:notifications}
+
+# Finance Service Configuration
+finance:
+  service:
+    host: ${FINANCE_SERVICE_HOST:localhost}
+    port: ${FINANCE_SERVICE_PORT:9091}
+    timeout: ${FINANCE_SERVICE_TIMEOUT:30000}
+
+# Platform Configuration
+platform:
+  fee-percentage: ${PLATFORM_FEE_PERCENTAGE:0.05}
+  currency: ${PLATFORM_CURRENCY:USD}
 
 # Security Configuration
 security:
-  oauth2:
-    resourceserver:
-      jwt:
-        issuer-uri: http://localhost:8080/realms/nodeorb
+  jwt:
+    secret: ${JWT_SECRET:your-secret-key}
+    expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+
+# Health Check Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+  health:
+    kafka:
+      enabled: true
+    db:
+      enabled: true

@@ -1,0 +1,173 @@
+// Identity Service gRPC definitions for biometric authentication
+syntax = "proto3";
+
+package identity;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "com.nodeorb.identity.grpc";
+option java_outer_classname = "IdentityServiceProto";
+
+// Identity Service for biometric authentication and WebAuthn
+service IdentityService {
+  // Generate biometric challenge for user
+  rpc GenerateBiometricChallenge(BiometricChallengeRequest) returns (BiometricChallengeResponse);
+  
+  // Verify biometric signature
+  rpc VerifyBiometricSignature(BiometricSignatureRequest) returns (BiometricSignatureResponse);
+  
+  // Generate WebAuthn challenge
+  rpc GenerateWebAuthnChallenge(WebAuthnChallengeRequest) returns (WebAuthnChallengeResponse);
+  
+  // Verify WebAuthn signature
+  rpc VerifyWebAuthnSignature(WebAuthnSignatureRequest) returns (WebAuthnSignatureResponse);
+  
+  // Register WebAuthn credential
+  rpc RegisterWebAuthnCredential(WebAuthnRegistrationRequest) returns (WebAuthnRegistrationResponse);
+  
+  // Get user credentials
+  rpc GetUserCredentials(UserCredentialsRequest) returns (UserCredentialsResponse);
+  
+  // Validate biometric session
+  rpc ValidateBiometricSession(BiometricSessionRequest) returns (BiometricSessionResponse);
+}
+
+// Biometric Challenge Request
+message BiometricChallengeRequest {
+  string user_id = 1;
+  BiometricAuthType auth_type = 2;
+  map<string, string> context = 3;
+}
+
+// Biometric Challenge Response
+message BiometricChallengeResponse {
+  string bio_session_id = 1;
+  string challenge = 2;
+  int64 created_at = 3;
+  int64 expires_at = 4;
+  BiometricAuthType auth_type = 5;
+}
+
+// Biometric Signature Request
+message BiometricSignatureRequest {
+  string bio_session_id = 1;
+  string signed_challenge = 2;
+  string user_id = 3;
+}
+
+// Biometric Signature Response
+message BiometricSignatureResponse {
+  bool success = 1;
+  string bio_session_id = 2;
+  int64 timestamp = 3;
+  BiometricAuthType auth_type = 4;
+  string signed_challenge = 5;
+  string error_message = 6;
+}
+
+// WebAuthn Challenge Request
+message WebAuthnChallengeRequest {
+  string user_id = 1;
+  string origin = 2;
+  string rp_id = 3;
+}
+
+// WebAuthn Challenge Response
+message WebAuthnChallengeResponse {
+  string challenge_id = 1;
+  string challenge = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp expires_at = 4;
+  string origin = 5;
+  string rp_id = 6;
+}
+
+// WebAuthn Signature Request
+message WebAuthnSignatureRequest {
+  string challenge_id = 1;
+  string signed_challenge = 2;
+  string credential_id = 3;
+  string user_handle = 4;
+  string authenticator_data = 5;
+  string signature = 6;
+  string user_id = 7;
+}
+
+// WebAuthn Signature Response
+message WebAuthnSignatureResponse {
+  bool success = 1;
+  string challenge_id = 2;
+  int64 timestamp = 3;
+  string signed_challenge = 4;
+  string error_message = 5;
+}
+
+// WebAuthn Registration Request
+message WebAuthnRegistrationRequest {
+  string user_id = 1;
+  string credential_id = 2;
+  string public_key_pem = 3;
+  AuthenticatorType authenticator_type = 4;
+  string device_name = 5;
+  map<string, string> metadata = 6;
+}
+
+// WebAuthn Registration Response
+message WebAuthnRegistrationResponse {
+  bool success = 1;
+  string credential_id = 2;
+  string message = 3;
+}
+
+// User Credentials Request
+message UserCredentialsRequest {
+  string user_id = 1;
+}
+
+// User Credentials Response
+message UserCredentialsResponse {
+  repeated PublicKeyCredential credentials = 1;
+}
+
+// Biometric Session Request
+message BiometricSessionRequest {
+  string bio_session_id = 1;
+  string user_id = 2;
+}
+
+// Biometric Session Response
+message BiometricSessionResponse {
+  bool active = 1;
+  int64 expires_at = 2;
+  BiometricAuthType auth_type = 3;
+}
+
+// Public Key Credential
+message PublicKeyCredential {
+  string credential_id = 1;
+  string public_key_pem = 2;
+  AuthenticatorType authenticator_type = 3;
+  google.protobuf.Timestamp created_at = 4;
+  string user_id = 5;
+  string device_name = 6;
+  google.protobuf.Timestamp last_used_at = 7;
+}
+
+// Biometric Authentication Types
+enum BiometricAuthType {
+  BIOMETRIC_AUTH_TYPE_UNSPECIFIED = 0;
+  FACE_ID = 1;
+  TOUCH_ID = 2;
+  FINGERPRINT = 3;
+  IRIS_SCAN = 4;
+  VOICE_RECOGNITION = 5;
+  WEB_AUTHN = 6;
+}
+
+// Authenticator Types
+enum AuthenticatorType {
+  AUTHENTICATOR_TYPE_UNSPECIFIED = 0;
+  PLATFORM = 1;      // Built-in (FaceID, TouchID)
+  CROSS_PLATFORM = 2; // External (YubiKey, Google Titan)
+}

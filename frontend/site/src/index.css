@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the site */
+@layer base {
+  html {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-neon-blue to-neon-green text-dark-900 font-semibold px-6 py-3 rounded-lg shadow-lg shadow-neon-blue/25 hover:shadow-neon-blue/40 transition-all duration-300 transform hover:scale-105;
+  }
+
+  .btn-secondary {
+    @apply border-2 border-gray-600 text-gray-300 font-semibold px-6 py-3 rounded-lg hover:border-neon-blue hover:text-neon-blue transition-all duration-300;
+  }
+
+  .card {
+    @apply bg-gradient-to-br from-dark-700 to-dark-800 p-6 rounded-xl border border-gray-700 hover:border-neon-blue transition-all duration-300 hover:shadow-xl hover:shadow-neon-blue/20;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-neon-blue to-neon-green bg-clip-text text-transparent;
+  }
+}
+
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
+  }
+
+  .glow-blue {
+    box-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 10px rgba(160, 240, 255, 0.5);
+  }
+
+  .neon-border {
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    box-shadow: 0 0 5px rgba(0, 245, 255, 0.2);
+  }
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 640px) {
+  .mobile-app-notice {
+    @apply p-4 bg-dark-600 rounded-lg border border-gray-600 text-center;
+  }
+
+  .mobile-app-notice h3 {
+    @apply text-lg font-semibold text-white mb-2;
+  }
+
+  .mobile-app-notice p {
+    @apply text-gray-400 text-sm;
+  }
+}
+
+/* Accessibility improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus styles for better accessibility */
+.focus-visible {
+  outline: 2px solid #00f5ff;
+  outline-offset: 2px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Animation improvements */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card {
+    border-color: #ffffff;
+  }
+  
+  .btn-primary {
+    background-color: #ffffff;
+    color: #000000;
+    border: 2px solid #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .card, .btn-primary, .btn-secondary {
+    border: 1px solid #000000 !important;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+  
+  .gradient-text {
+    background: transparent !important;
+    color: black !important;
+  }
+}

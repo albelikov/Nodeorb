@@ -4,7 +4,7 @@ plugins {
     id("io.spring.dependency-management")
 }
 
-// Версия Spring Cloud для Spring Boot 3.2.x
+// Spring Cloud version for Spring Boot 4.0.2
 extra["springCloudVersion"] = "2023.0.0"
 
 dependencyManagement {

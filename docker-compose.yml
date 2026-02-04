@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # PostgreSQL with PostGIS extension
   postgres:
-    image: postgis/postgis:18-3.6
+    image: postgis/postgis:18-alpine
     container_name: nodeorb-postgres
     environment:
       POSTGRES_DB: nodeorb

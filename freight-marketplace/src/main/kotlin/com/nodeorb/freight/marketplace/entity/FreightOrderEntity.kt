@@ -80,7 +80,15 @@ data class BidEntity(
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "freight_order_id", nullable = false)
-    val freightOrder: FreightOrderEntity,
+    val freightOrder: FreightOrderEntity? = null,
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "master_order_id", nullable = false)
+    val masterOrder: MasterOrderEntity? = null,
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "partial_order_id", nullable = false)
+    val partialOrder: PartialOrderEntity? = null,
     
     @Column(nullable = false, precision = 15, scale = 2)
     var amount: BigDecimal,

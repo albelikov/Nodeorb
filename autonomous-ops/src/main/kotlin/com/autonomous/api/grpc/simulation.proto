@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package com.autonomous.api.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.autonomous.api.grpc";
+option java_outer_classname = "SimulationProto";
+
+import "google/protobuf/timestamp.proto";
+
+// Simulation service definition
+service SimulationService {
+    // Run mission simulation
+    rpc RunSimulation(RunSimulationRequest) returns (RunSimulationResponse);
+    
+    // Get simulation status
+    rpc GetSimulationStatus(GetSimulationStatusRequest) returns (GetSimulationStatusResponse);
+    
+    // Cancel simulation
+    rpc CancelSimulation(CancelSimulationRequest) returns (CancelSimulationResponse);
+    
+    // Get simulation results
+    rpc GetSimulationResults(GetSimulationResultsRequest) returns (GetSimulationResultsResponse);
+}
+
+// Simulation request
+message RunSimulationRequest {
+    string simulation_id = 1;
+    string mission_id = 2;
+    string description = 3;
+    SimulationParameters parameters = 4;
+    google.protobuf.Timestamp request_time = 5;
+}
+
+// Simulation parameters
+message SimulationParameters {
+    int32 iterations = 1;
+    string weather_condition = 2;
+    string traffic_condition = 3;
+    string risk_level = 4;
+    double battery_voltage = 5;
+    double payload_kg = 6;
+}
+
+// Simulation response
+message RunSimulationResponse {
+    string simulation_id = 1;
+    string status = 2;
+    string message = 3;
+    google.protobuf.Timestamp requested_at = 4;
+}
+
+// Get simulation status request
+message GetSimulationStatusRequest {
+    string simulation_id = 1;
+}
+
+// Get simulation status response
+message GetSimulationStatusResponse {
+    string simulation_id = 1;
+    string mission_id = 2;
+    string status = 3;
+    string progress = 4;
+    string message = 5;
+    google.protobuf.Timestamp requested_at = 6;
+    google.protobuf.Timestamp started_at = 7;
+    google.protobuf.Timestamp completed_at = 8;
+}
+
+// Cancel simulation request
+message CancelSimulationRequest {
+    string simulation_id = 1;
+    string reason = 2;
+}
+
+// Cancel simulation response
+message CancelSimulationResponse {
+    string simulation_id = 1;
+    string status = 2;
+    string message = 3;
+    google.protobuf.Timestamp cancelled_at = 4;
+}
+
+// Get simulation results request
+message GetSimulationResultsRequest {
+    string simulation_id = 1;
+}
+
+// Get simulation results response
+message GetSimulationResultsResponse {
+    string simulation_id = 1;
+    string mission_id = 2;
+    string status = 3;
+    SimulationResult result = 4;
+    google.protobuf.Timestamp completed_at = 5;
+}
+
+// Simulation result
+message SimulationResult {
+    double average_duration_seconds = 1;
+    double minimum_duration_seconds = 2;
+    double maximum_duration_seconds = 3;
+    double standard_deviation_duration_seconds = 4;
+    double average_energy_consumption_wh = 5;
+    double minimum_energy_consumption_wh = 6;
+    double maximum_energy_consumption_wh = 7;
+    double standard_deviation_energy_consumption_wh = 8;
+    int32 successful_iterations = 9;
+    int32 failed_iterations = 10;
+    string error_analysis = 11;
+}

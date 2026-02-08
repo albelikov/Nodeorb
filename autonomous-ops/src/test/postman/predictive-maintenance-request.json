@@ -1,0 +1,35 @@
+{
+  "vehicleId": "V-001",
+  "sensorData": [
+    {
+      "timestamp": 1738800000000,
+      "temperature": 95.5,
+      "vibration": 4.8,
+      "pressure": 9.5
+    },
+    {
+      "timestamp": 1738800060000,
+      "temperature": 96.2,
+      "vibration": 5.1,
+      "pressure": 10.2
+    },
+    {
+      "timestamp": 1738800120000,
+      "temperature": 97.8,
+      "vibration": 5.5,
+      "pressure": 10.8
+    },
+    {
+      "timestamp": 1738800180000,
+      "temperature": 98.5,
+      "vibration": 6.2,
+      "pressure": 11.3
+    },
+    {
+      "timestamp": 1738800240000,
+      "temperature": 99.3,
+      "vibration": 6.8,
+      "pressure": 11.9
+    }
+  ]
+}

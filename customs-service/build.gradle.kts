@@ -1,52 +1,110 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm")
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
+    kotlin("jvm")
+    kotlin("plugin.serialization") version "1.9.21"
+    application
+    id("com.google.protobuf")
 }
 
-extra["springCloudVersion"] = "2023.0.0"
+group = "com.logistics.customs"
+version = "1.0.0"
 
-dependencyManagement {
-    imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+dependencies {
+    implementation(Kotlin.stdlib)
+    implementation(Kotlin.reflect)
+    
+    // gRPC
+    implementation(Grpc.kotlinStub)
+    implementation(Grpc.protobuf)
+    implementation(Grpc.stub)
+    implementation(Grpc.nettyShaded)
+    
+    // Exposed ORM
+    implementation("org.jetbrains.exposed:exposed-core:0.47.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.47.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.47.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.47.0")
+    
+    // Database drivers
+    implementation(Database.postgresql)
+    
+    // ClickHouse integration (temporarily removed)
+    // implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.4.6")
+    
+    // Kafka integration
+    implementation(Kafka.clients)
+    
+    // JSON processing
+    implementation(Utils.jacksonDatabind)
+    implementation(Utils.jacksonKotlin)
+    
+    // Statistical analysis
+    implementation("org.apache.commons:commons-math3:3.6.1")
+    
+    // Logging
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation(Logging.slf4j)
+    
+    // Testing
+    testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${Versions.kotlin}")
+    testImplementation(Testing.junit)
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Versions.junitJupiter}")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(25)
+}
+
+application {
+    mainClass.set("com.logistics.customs.CustomsApplicationKt")
+}
+
+// Generate gRPC code from proto files
+protobuf {
+    protoc {
+        artifact = Protobuf.protoc
+    }
+    plugins {
+        create("grpc") {
+            artifact = Protobuf.grpcJava
+        }
+        create("grpckt") {
+            artifact = Protobuf.grpcKotlin
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.plugins {
+                create("grpc")
+                create("grpckt")
+            }
+        }
     }
 }
 
-springBoot {
-    mainClass.set("com.logi.customs.CustomsServiceApplicationKt")
+sourceSets {
+    main {
+        proto {
+            srcDir("api/grpc")
+        }
+        java {
+            srcDirs("build/generated/source/proto/main/grpc")
+            srcDirs("build/generated/source/proto/main/grpckt")
+            srcDirs("build/generated/source/proto/main/java")
+        }
+    }
 }
 
-dependencies {
-    // Spring Boot
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    
-    // Database
-    implementation("org.postgresql:postgresql")
-    
-    // EDI/XML Processing
-    implementation("org.apache.ws.commons.axiom:axiom-api:1.4.0")
-    implementation("org.apache.ws.commons.axiom:axiom-impl:1.4.0")
-    
-    // Bouncy Castle for security/government integrations
-    implementation("org.bouncycastle:bcprov-jdk18on:1.77")
-    implementation("org.bouncycastle:bcpkix-jdk18on:1.77")
-    
-    // Spring Cloud
-    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
-    
-    // Kotlin
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    
-    compileOnly("org.projectlombok:lombok")
-    annotationProcessor("org.projectlombok:lombok")
-    
-    // Testing
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.testcontainers:postgresql:1.19.3")
+tasks.register<Jar>("fatJar") {
+    archiveClassifier.set("fat")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    from(sourceSets.main.get().output)
+    manifest {
+        attributes["Main-Class"] = application.mainClass
+    }
 }

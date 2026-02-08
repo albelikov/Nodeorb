@@ -1,0 +1,10 @@
+admin-backend
+admin-frontend
+autonomous-ops
+customs-service
+fms-service
+freight-marketplace
+oms-service
+scm-service
+tms-service
+wms-service

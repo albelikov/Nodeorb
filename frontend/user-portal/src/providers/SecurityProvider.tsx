@@ -96,7 +96,14 @@ const SecurityProvider: React.FC<SecurityProviderProps> = ({ children }) => {
   return (
     <SecurityContext.Provider value={contextValue}>
       {children}
-      <StepUpAuthModal />
+      <StepUpAuthModal 
+        isOpen={store.isStepUpRequired}
+        onSuccess={store.completeStepUpAuth}
+        onCancel={() => {
+          // Handle cancel - maybe logout or just close the modal
+          store.triggerStepUpAuth('') // Clear the step up requirement
+        }}
+      />
     </SecurityContext.Provider>
   )
 }

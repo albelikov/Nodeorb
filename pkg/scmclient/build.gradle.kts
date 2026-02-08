@@ -1,14 +1,12 @@
 plugins {
-    kotlin("jvm") version "1.9.20"
+    kotlin("jvm")
     application
 }
 
 group = "com.nodeorb"
 version = "1.0.0"
 
-repositories {
-    mavenCentral()
-}
+
 
 dependencies {
     implementation(kotlin("stdlib"))
@@ -26,9 +24,9 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.9")
     implementation("ch.qos.logback:logback-classic:1.4.11")
     
-    // WebAuthn Support
-    implementation("com.yubico:java-webauthn-server-core:1.11.5")
-    implementation("com.yubico:java-webauthn-server-attestation:1.11.5")
+    // WebAuthn Support (temporarily removed)
+    // implementation("com.yubico:java-webauthn-server-core:2.0.0")
+    // implementation("com.yubico:java-webauthn-server-attestation:2.0.0")
     
     // Security & Cryptography
     implementation("org.bouncycastle:bcprov-jdk15on:1.70")
@@ -42,7 +40,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("io.mockk:mockk:1.13.8")
-    testImplementation("com.yubico:java-webauthn-server-core:1.11.5")
+    // testImplementation("com.yubico:java-webauthn-server-core:2.0.0")
 }
 
 tasks.test {
@@ -79,13 +77,13 @@ tasks.register<Exec>("generateProto") {
     outputs.dir("build/generated/source/proto/main")
 }
 
-tasks.named("compileKotlin") {
-    dependsOn("generateProto")
-}
+// tasks.named("compileKotlin") {
+//     dependsOn("generateProto")
+// }
 
-tasks.named("compileTestKotlin") {
-    dependsOn("generateProto")
-}
+// tasks.named("compileTestKotlin") {
+//     dependsOn("generateProto")
+// }
 
 // Configure WebAuthn dependencies
 configurations.all {

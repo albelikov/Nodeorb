@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package com.autonomous.api.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.autonomous.api.grpc";
+option java_outer_classname = "ReplanningProto";
+
+import "google/protobuf/timestamp.proto";
+
+// Replanning service definition
+service ReplanningService {
+    // Request mission replanning
+    rpc RequestReplanning(RequestReplanningRequest) returns (RequestReplanningResponse);
+    
+    // Get replanning status
+    rpc GetReplanningStatus(GetReplanningStatusRequest) returns (GetReplanningStatusResponse);
+    
+    // Cancel replanning
+    rpc CancelReplanning(CancelReplanningRequest) returns (CancelReplanningResponse);
+}
+
+// Replanning request
+message RequestReplanningRequest {
+    string mission_id = 1;
+    string reason = 2;
+    ReplanningParameters parameters = 3;
+    google.protobuf.Timestamp request_time = 4;
+}
+
+// Replanning parameters
+message ReplanningParameters {
+    double max_delay_seconds = 1;
+    double max_energy_increase_percentage = 2;
+    string priority = 3;
+    repeated Waypoint avoided_waypoints = 4;
+}
+
+// Waypoint
+message Waypoint {
+    string waypoint_id = 1;
+    double latitude = 2;
+    double longitude = 3;
+    double altitude = 4;
+    string waypoint_type = 5;
+}
+
+// Replanning response
+message RequestReplanningResponse {
+    string replanning_id = 1;
+    string status = 2;
+    string message = 3;
+    google.protobuf.Timestamp requested_at = 4;
+}
+
+// Get replanning status request
+message GetReplanningStatusRequest {
+    string replanning_id = 1;
+}
+
+// Get replanning status response
+message GetReplanningStatusResponse {
+    string replanning_id = 1;
+    string mission_id = 2;
+    string status = 3;
+    string progress = 4;
+    string message = 5;
+    google.protobuf.Timestamp requested_at = 6;
+    google.protobuf.Timestamp started_at = 7;
+    google.protobuf.Timestamp completed_at = 8;
+}
+
+// Cancel replanning request
+message CancelReplanningRequest {
+    string replanning_id = 1;
+    string reason = 2;
+}
+
+// Cancel replanning response
+message CancelReplanningResponse {
+    string replanning_id = 1;
+    string status = 2;
+    string message = 3;
+    google.protobuf.Timestamp cancelled_at = 4;
+}

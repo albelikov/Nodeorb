@@ -1,37 +1,15 @@
-# Autonomous Operations Service Configuration
-# Compatible with PostgreSQL 18
-
-server:
-  port: 8092
-
 spring:
   application:
     name: logi-autonomous-ops
-
   datasource:
     url: jdbc:postgresql://localhost:5432/logi_autonomous
     username: logi_autonomous
-    password: ${DB_PASSWORD:password}
+    password: password
     driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 30
-      minimum-idle: 10
-
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-
   data:
     redis:
       host: localhost
       port: 6379
-
-  # Async configuration
   task:
     execution:
       pool:
@@ -39,37 +17,40 @@ spring:
         max-size: 20
       thread-name-prefix: autonomous-
 
-# Autonomous Operations Configuration
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+server:
+  port: 8092
+
 logi:
   autonomous:
-    # AI/ML модели
     ai:
       enabled: true
       model-path: /models/autonomous/
       inference-timeout: 5000
       cache-ttl: 3600
-    # Принятие решений
     decision-making:
       mode: autonomous
       human-oversight: true
       escalation-threshold: 0.85
       max-autonomous-decisions: 100
-    # Оптимизация в реальном времени
     optimization:
       enabled: true
       interval: 30000
       window-size: 3600000
-    # Предиктивное обслуживание
     predictive-maintenance:
       enabled: true
       alert-threshold: 0.7
       prediction-horizon: 604800000
-    # Edge computing
     edge:
       enabled: true
       sync-interval: 10000
       offline-mode: true
-    # Автономный транспорт
     autonomous-vehicles:
       enabled: true
       protocol: v2x
@@ -81,12 +62,6 @@ logi:
 
   tms:
     url: http://localhost:8084
-
-logging:
-  level:
-    root: INFO
-    com.logi.autonomous: DEBUG
-    org.springframework.ai: DEBUG
 
 management:
   endpoints:

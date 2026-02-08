@@ -1,15 +1,25 @@
 version: '3.8'
 
+x-infra-healthcheck: &infra-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 5
+
+x-service-healthcheck: &service-healthcheck
+  interval: 30s
+  timeout: 10s
+  retries: 5
+
 services:
-  # PostgreSQL with PostGIS extension
+  # Инфраструктура (профиль infra)
   postgres:
     image: postgis/postgis:18-alpine
     container_name: nodeorb-postgres
     environment:
       POSTGRES_DB: nodeorb
       POSTGRES_USER: nodeorb
-      POSTGRES_PASSWORD: nodeorb_dev_password
-      POSTGRES_MULTIPLE_DATABASES: scm_db,oms_db,wms_db,fms_db,tms_db
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nodeorb_dev_password}
+      POSTGRES_MULTIPLE_DATABASES: scm_db,oms_db,wms_db,fms_db,tms_db,ao_db,customs_db
     ports:
       - "5432:5432"
     volumes:
@@ -17,12 +27,10 @@ services:
     networks:
       - nodeorb-network
     healthcheck:
+      <<: *infra-healthcheck
       test: ["CMD-SHELL", "pg_isready -U nodeorb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    profiles: ["infra", "services", "all"]
 
-  # pgAdmin for database management
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: nodeorb-pgadmin
@@ -38,33 +46,160 @@ services:
       - nodeorb-network
     depends_on:
       - postgres
+    profiles: ["infra", "all"]
 
-  # Apache Kafka (опционально для недели 3+)
-  # zookeeper:
-  #   image: confluentinc/cp-zookeeper:7.5.0
-  #   container_name: nodeorb-zookeeper
-  #   environment:
-  #     ZOOKEEPER_CLIENT_PORT: 2181
-  #     ZOOKEEPER_TICK_TIME: 2000
-  #   networks:
-  #     - nodeorb-network
+  redis:
+    image: redis:7-alpine
+    container_name: nodeorb-redis
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      <<: *infra-healthcheck
+      test: ["CMD", "redis-cli", "ping"]
+    networks:
+      - nodeorb-network
+    profiles: ["infra", "services", "all"]
 
-  # kafka:
-  #   image: confluentinc/cp-kafka:7.5.0
-  #   container_name: nodeorb-kafka
-  #   depends_on:
-  #     - zookeeper
-  #   ports:
-  #     - "9092:9092"
-  #   environment:
-  #     KAFKA_BROKER_ID: 1
-  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-  #     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-  #   networks:
-  #     - nodeorb-network
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5.2
+    container_name: nodeorb-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/nodeorb
+      KC_DB_USERNAME: nodeorb
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-nodeorb_dev_password}
+      KC_HOSTNAME_STRICT: false
+      KC_PROXY: edge
+    command: start-dev
+    ports:
+      - "8086:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.0\r\n' >&3;timeout 1 cat <&3 | grep -q '200 OK' || exit 1"]
+    networks:
+      - nodeorb-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    profiles: ["infra", "services", "all"]
+
+  # MQTT Broker for IoT (профиль infra)
+  emqx:
+    image: emqx:5.3-alpine
+    container_name: nodeorb-emqx
+    environment:
+      EMQX_DASHBOARD__DEFAULT_USER: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_PASSWORD:-admin}
+    ports:
+      - "1883:1883"  # MQTT
+      - "8083:8083"  # MQTT over WebSocket
+      - "18083:18083"  # Dashboard
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:18083/api/v4/nodes"]
+    networks:
+      - nodeorb-network
+    profiles: ["infra", "all"]
+
+  # Elasticsearch for logging (профиль infra)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: nodeorb-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+    networks:
+      - nodeorb-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    profiles: ["infra", "all"]
+
+  # Kibana for visualization (профиль infra)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.15.0
+    container_name: nodeorb-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+    networks:
+      - nodeorb-network
+    profiles: ["infra", "all"]
+
+  # Grafana for monitoring (профиль infra)
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: nodeorb-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - nodeorb-network
+    profiles: ["infra", "all"]
+
+  # Prometheus for metrics (профиль infra)
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: nodeorb-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+    volumes:
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - nodeorb-network
+    profiles: ["infra", "all"]
+
+  # Zipkin for distributed tracing (профиль infra)
+  zipkin:
+    image: openzipkin/zipkin:3.3
+    container_name: nodeorb-zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - nodeorb-network
+    profiles: ["infra", "all"]
 
   # SCM Service (Security & Compliance Management)
   scm-service:
@@ -76,7 +211,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/scm_db
       SPRING_DATASOURCE_USERNAME: nodeorb
-      SPRING_DATASOURCE_PASSWORD: nodeorb_dev_password
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nodeorb_dev_password}
     ports:
       - "8081:8080"
     networks:
@@ -84,7 +219,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
     restart: unless-stopped
+    profiles: ["services", "all"]
 
   # OMS Service (Order Management System)
   oms-service:
@@ -96,7 +235,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/oms_db
       SPRING_DATASOURCE_USERNAME: nodeorb
-      SPRING_DATASOURCE_PASSWORD: nodeorb_dev_password
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nodeorb_dev_password}
       SCM_SERVICE_URL: http://scm-service:8080
     ports:
       - "8082:8080"
@@ -106,8 +245,12 @@ services:
       postgres:
         condition: service_healthy
       scm-service:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
     restart: unless-stopped
+    profiles: ["services", "all"]
 
   # WMS Service (Warehouse Management System)
   wms-service:
@@ -119,7 +262,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/wms_db
       SPRING_DATASOURCE_USERNAME: nodeorb
-      SPRING_DATASOURCE_PASSWORD: nodeorb_dev_password
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nodeorb_dev_password}
       SCM_SERVICE_URL: http://scm-service:8080
       OMS_SERVICE_URL: http://oms-service:8080
     ports:
@@ -130,10 +273,14 @@ services:
       postgres:
         condition: service_healthy
       scm-service:
-        condition: service_started
+        condition: service_healthy
       oms-service:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
     restart: unless-stopped
+    profiles: ["services", "all"]
 
   # FMS Service (Fleet Management System)
   fms-service:
@@ -145,7 +292,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fms_db
       SPRING_DATASOURCE_USERNAME: nodeorb
-      SPRING_DATASOURCE_PASSWORD: nodeorb_dev_password
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nodeorb_dev_password}
       SCM_SERVICE_URL: http://scm-service:8080
       WMS_SERVICE_URL: http://wms-service:8080
     ports:
@@ -156,8 +303,12 @@ services:
       postgres:
         condition: service_healthy
       scm-service:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
     restart: unless-stopped
+    profiles: ["services", "all"]
 
   # TMS Service (Transportation Management System)
   tms-service:
@@ -169,7 +320,7 @@ services:
       SPRING_PROFILES_ACTIVE: dev
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/tms_db
       SPRING_DATASOURCE_USERNAME: nodeorb
-      SPRING_DATASOURCE_PASSWORD: nodeorb_dev_password
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nodeorb_dev_password}
       SCM_SERVICE_URL: http://scm-service:8080
       FMS_SERVICE_URL: http://fms-service:8080
     ports:
@@ -180,10 +331,86 @@ services:
       postgres:
         condition: service_healthy
       scm-service:
-        condition: service_started
+        condition: service_healthy
       fms-service:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
     restart: unless-stopped
+    profiles: ["services", "all"]
+
+  # Autonomous Ops Service (AI/ML for logistics)
+  autonomous-ops:
+    build:
+      context: ./autonomous-ops
+      dockerfile: Dockerfile
+    container_name: nodeorb-autonomous-ops
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ao_db
+      SPRING_DATASOURCE_USERNAME: nodeorb
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nodeorb_dev_password}
+      SCM_SERVICE_URL: http://scm-service:8080
+      OMS_SERVICE_URL: http://oms-service:8080
+      WMS_SERVICE_URL: http://wms-service:8080
+      FMS_SERVICE_URL: http://fms-service:8080
+      TMS_SERVICE_URL: http://tms-service:8080
+    ports:
+      - "8087:8080"
+    networks:
+      - nodeorb-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      scm-service:
+        condition: service_healthy
+      oms-service:
+        condition: service_healthy
+      wms-service:
+        condition: service_healthy
+      fms-service:
+        condition: service_healthy
+      tms-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+    restart: unless-stopped
+    profiles: ["services", "all"]
+
+  # Customs Service (Integration with customs authorities)
+  customs-service:
+    build:
+      context: ./customs-service
+      dockerfile: Dockerfile
+    container_name: nodeorb-customs
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customs_db
+      SPRING_DATASOURCE_USERNAME: nodeorb
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-nodeorb_dev_password}
+      SCM_SERVICE_URL: http://scm-service:8080
+      OMS_SERVICE_URL: http://oms-service:8080
+      TMS_SERVICE_URL: http://tms-service:8080
+    ports:
+      - "8088:8080"
+    networks:
+      - nodeorb-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      scm-service:
+        condition: service_healthy
+      oms-service:
+        condition: service_healthy
+      tms-service:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+    restart: unless-stopped
+    profiles: ["services", "all"]
 
   # Admin Backend
   admin-backend:
@@ -198,6 +425,8 @@ services:
       WMS_SERVICE_URL: http://wms-service:8080
       FMS_SERVICE_URL: http://fms-service:8080
       TMS_SERVICE_URL: http://tms-service:8080
+      AUTONOMOUS_OPS_URL: http://autonomous-ops:8080
+      CUSTOMS_SERVICE_URL: http://customs-service:8080
       KEYCLOAK_URL: http://localhost:8086
     ports:
       - "8080:8080"
@@ -209,7 +438,61 @@ services:
       - wms-service
       - fms-service
       - tms-service
+      - autonomous-ops
+      - customs-service
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
     restart: unless-stopped
+    profiles: ["services", "all"]
+
+  # Freight Marketplace Service (профиль marketplace)
+  freight-marketplace-db:
+    image: postgis/postgis:18-3.6
+    container_name: nodeorb-freight-marketplace-db
+    environment:
+      POSTGRES_DB: freight_marketplace
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${FM_DB_PASSWORD:-postgres}
+    ports:
+      - "5433:5432"
+    volumes:
+      - freight_marketplace_data:/var/lib/postgresql
+    networks:
+      - nodeorb-network
+    healthcheck:
+      <<: *infra-healthcheck
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+    profiles: ["marketplace", "all"]
+
+  freight-marketplace:
+    build:
+      context: ./freight-marketplace
+      dockerfile: Dockerfile
+    container_name: nodeorb-freight-marketplace
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://freight-marketplace-db:5432/freight_marketplace
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${FM_DB_PASSWORD:-postgres}
+    ports:
+      - "8089:8084"
+    depends_on:
+      freight-marketplace-db:
+        condition: service_healthy
+    networks:
+      - nodeorb-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    healthcheck:
+      <<: *service-healthcheck
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+    restart: unless-stopped
+    profiles: ["marketplace", "all"]
 
 networks:
   nodeorb-network:
@@ -218,3 +501,10 @@ networks:
 volumes:
   postgres_data:
   pgadmin_data:
+  redis_data:
+  freight_marketplace_data:
+  emqx_data:
+  emqx_log:
+  elasticsearch_data:
+  grafana_data:
+  prometheus_data:

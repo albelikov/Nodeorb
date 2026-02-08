@@ -1,0 +1,441 @@
+syntax = "proto3";
+
+package com.logistics.financelegal;
+
+option java_multiple_files = true;
+option java_package = "com.logistics.financelegal";
+option java_outer_classname = "FinanceLegalProto";
+
+// Finance Legal Service - Main service for core financial and legal operations
+service FinanceLegalService {
+    // Chart of Accounts operations
+    rpc CreateAccount(CreateAccountRequest) returns (AccountResponse);
+    rpc GetAccount(GetAccountRequest) returns (AccountResponse);
+    rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+    
+    // Accounting Entries operations
+    rpc CreateEntry(CreateEntryRequest) returns (EntryResponse);
+    rpc GetEntry(GetEntryRequest) returns (EntryResponse);
+    rpc ListEntries(ListEntriesRequest) returns (ListEntriesResponse);
+}
+
+// Financial Accounting Service - Invoicing and payments
+service FinancialAccountingService {
+    // Invoice operations
+    rpc CreateInvoice(CreateInvoiceRequest) returns (InvoiceResponse);
+    rpc GetInvoice(GetInvoiceRequest) returns (InvoiceResponse);
+    rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse);
+    
+    // Payment operations
+    rpc CreatePayment(CreatePaymentRequest) returns (PaymentResponse);
+    rpc GetPayment(GetPaymentRequest) returns (PaymentResponse);
+    rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
+}
+
+// Legal Module Service - Contracts and legal documentation
+service LegalModuleService {
+    // Contract operations
+    rpc CreateContract(CreateContractRequest) returns (ContractResponse);
+    rpc GetContract(GetContractRequest) returns (ContractResponse);
+    rpc ListContracts(ListContractsRequest) returns (ListContractsResponse);
+    rpc UpdateContractStatus(UpdateContractStatusRequest) returns (ContractResponse);
+}
+
+// Taxation Service - Tax declarations and calculations
+service TaxationService {
+    // Tax declaration operations
+    rpc CreateTaxDeclaration(CreateTaxDeclarationRequest) returns (TaxDeclarationResponse);
+    rpc GetTaxDeclaration(GetTaxDeclarationRequest) returns (TaxDeclarationResponse);
+    rpc ListTaxDeclarations(ListTaxDeclarationsRequest) returns (ListTaxDeclarationsResponse);
+    rpc SubmitTaxDeclaration(SubmitTaxDeclarationRequest) returns (TaxDeclarationResponse);
+}
+
+// Insurance Service - Insurance policies management
+service InsuranceService {
+    // Insurance policy operations
+    rpc CreateInsurancePolicy(CreateInsurancePolicyRequest) returns (InsurancePolicyResponse);
+    rpc GetInsurancePolicy(GetInsurancePolicyRequest) returns (InsurancePolicyResponse);
+    rpc ListInsurancePolicies(ListInsurancePoliciesRequest) returns (ListInsurancePoliciesResponse);
+    rpc UpdateInsurancePolicyStatus(UpdateInsurancePolicyStatusRequest) returns (InsurancePolicyResponse);
+}
+
+// Customs Service - Customs documentation and declarations
+service CustomsService {
+    // Customs document operations
+    rpc CreateCustomsDocument(CreateCustomsDocumentRequest) returns (CustomsDocumentResponse);
+    rpc GetCustomsDocument(GetCustomsDocumentRequest) returns (CustomsDocumentResponse);
+    rpc ListCustomsDocuments(ListCustomsDocumentsRequest) returns (ListCustomsDocumentsResponse);
+    rpc UpdateCustomsDocumentStatus(UpdateCustomsDocumentStatusRequest) returns (CustomsDocumentResponse);
+}
+
+// ========================================
+// Account messages
+// ========================================
+
+message CreateAccountRequest {
+    string account_number = 1;
+    string account_name = 2;
+    string account_type = 3;
+    string description = 4;
+    string parent_account = 5;
+    string currency = 6;
+    string created_by = 7;
+}
+
+message GetAccountRequest {
+    int64 id = 1;
+}
+
+message ListAccountsRequest {
+}
+
+message AccountResponse {
+    int64 id = 1;
+    string account_number = 2;
+    string account_name = 3;
+    string account_type = 4;
+    string description = 5;
+    string parent_account = 6;
+    string currency = 7;
+    bool is_active = 8;
+    string created_by = 9;
+    string created_at = 10;
+    string updated_at = 11;
+}
+
+message ListAccountsResponse {
+    repeated AccountResponse accounts = 1;
+}
+
+// ========================================
+// Entry messages
+// ========================================
+
+message CreateEntryRequest {
+    string entry_date = 1;
+    string description = 2;
+    string debit_account = 3;
+    string credit_account = 4;
+    string amount = 5;
+    string currency = 6;
+    string exchange_rate = 7;
+    string reference_number = 8;
+    string transaction_type = 9;
+    string created_by = 10;
+}
+
+message GetEntryRequest {
+    int64 id = 1;
+}
+
+message ListEntriesRequest {
+}
+
+message EntryResponse {
+    int64 id = 1;
+    string entry_date = 2;
+    string description = 3;
+    string debit_account = 4;
+    string credit_account = 5;
+    string amount = 6;
+    string currency = 7;
+    string exchange_rate = 8;
+    string reference_number = 9;
+    string transaction_type = 10;
+    string created_by = 11;
+    string created_at = 12;
+}
+
+message ListEntriesResponse {
+    repeated EntryResponse entries = 1;
+}
+
+// ========================================
+// Invoice messages
+// ========================================
+
+message CreateInvoiceRequest {
+    string invoice_number = 1;
+    string customer = 2;
+    string amount = 3;
+    string currency = 4;
+    string created_by = 5;
+}
+
+message GetInvoiceRequest {
+    int64 id = 1;
+}
+
+message ListInvoicesRequest {
+}
+
+message InvoiceResponse {
+    int64 id = 1;
+    string invoice_number = 2;
+    string customer = 3;
+    string amount = 4;
+    string currency = 5;
+    string status = 6;
+    string created_by = 7;
+    string created_at = 8;
+    string updated_at = 9;
+}
+
+message ListInvoicesResponse {
+    repeated InvoiceResponse invoices = 1;
+}
+
+// ========================================
+// Payment messages
+// ========================================
+
+message CreatePaymentRequest {
+    string payment_number = 1;
+    int64 invoice_id = 2;
+    string amount = 3;
+    string currency = 4;
+    string payment_method = 5;
+    string created_by = 6;
+}
+
+message GetPaymentRequest {
+    int64 id = 1;
+}
+
+message ListPaymentsRequest {
+}
+
+message PaymentResponse {
+    int64 id = 1;
+    string payment_number = 2;
+    int64 invoice_id = 3;
+    string amount = 4;
+    string currency = 5;
+    string payment_method = 6;
+    string status = 7;
+    string created_by = 8;
+    string created_at = 9;
+    string updated_at = 10;
+}
+
+message ListPaymentsResponse {
+    repeated PaymentResponse payments = 1;
+}
+
+// ========================================
+// Contract messages
+// ========================================
+
+message CreateContractRequest {
+    string contract_number = 1;
+    string contract_name = 2;
+    string counterparty = 3;
+    int64 counterparty_id = 4;
+    string start_date = 5;
+    string end_date = 6;
+    string contract_type = 7;
+    string status = 8;
+    string total_amount = 9;
+    string currency = 10;
+    string terms = 11;
+    string signed_by = 12;
+    string document_url = 13;
+    string created_by = 14;
+}
+
+message GetContractRequest {
+    int64 id = 1;
+}
+
+message ListContractsRequest {
+}
+
+message ContractResponse {
+    int64 id = 1;
+    string contract_number = 2;
+    string contract_name = 3;
+    string counterparty = 4;
+    int64 counterparty_id = 5;
+    string start_date = 6;
+    string end_date = 7;
+    string contract_type = 8;
+    string status = 9;
+    string total_amount = 10;
+    string currency = 11;
+    string terms = 12;
+    string signed_by = 13;
+    string document_url = 14;
+    string created_by = 15;
+    string created_at = 16;
+    string updated_at = 17;
+}
+
+message ListContractsResponse {
+    repeated ContractResponse contracts = 1;
+}
+
+message UpdateContractStatusRequest {
+    int64 id = 1;
+    string status = 2;
+}
+
+// ========================================
+// Tax Declaration messages
+// ========================================
+
+message CreateTaxDeclarationRequest {
+    string declaration_number = 1;
+    string tax_type = 2;
+    string tax_period = 3;
+    int32 year = 4;
+    string period = 5;
+    string total_amount = 6;
+    string currency = 7;
+    string status = 8;
+    string created_by = 9;
+}
+
+message GetTaxDeclarationRequest {
+    int64 id = 1;
+}
+
+message ListTaxDeclarationsRequest {
+}
+
+message TaxDeclarationResponse {
+    int64 id = 1;
+    string declaration_number = 2;
+    string tax_type = 3;
+    string tax_period = 4;
+    int32 year = 5;
+    string period = 6;
+    string total_amount = 7;
+    string currency = 8;
+    string status = 9;
+    string filing_date = 10;
+    string approved_date = 11;
+    string document_url = 12;
+    string created_by = 13;
+    string created_at = 14;
+    string updated_at = 15;
+}
+
+message ListTaxDeclarationsResponse {
+    repeated TaxDeclarationResponse declarations = 1;
+}
+
+message SubmitTaxDeclarationRequest {
+    int64 id = 1;
+}
+
+// ========================================
+// Insurance Policy messages
+// ========================================
+
+message CreateInsurancePolicyRequest {
+    string policy_number = 1;
+    string policy_type = 2;
+    string insurer = 3;
+    string insured = 4;
+    string start_date = 5;
+    string end_date = 6;
+    string coverage_amount = 7;
+    string premium_amount = 8;
+    string currency = 9;
+    string coverage_details = 10;
+    string status = 11;
+    string document_url = 12;
+    string created_by = 13;
+}
+
+message GetInsurancePolicyRequest {
+    int64 id = 1;
+}
+
+message ListInsurancePoliciesRequest {
+}
+
+message InsurancePolicyResponse {
+    int64 id = 1;
+    string policy_number = 2;
+    string policy_type = 3;
+    string insurer = 4;
+    string insured = 5;
+    string start_date = 6;
+    string end_date = 7;
+    string coverage_amount = 8;
+    string premium_amount = 9;
+    string currency = 10;
+    string coverage_details = 11;
+    string status = 12;
+    string document_url = 13;
+    string created_by = 14;
+    string created_at = 15;
+    string updated_at = 16;
+}
+
+message ListInsurancePoliciesResponse {
+    repeated InsurancePolicyResponse policies = 1;
+}
+
+message UpdateInsurancePolicyStatusRequest {
+    int64 id = 1;
+    string status = 2;
+}
+
+// ========================================
+// Customs Document messages
+// ========================================
+
+message CreateCustomsDocumentRequest {
+    string document_number = 1;
+    string document_type = 2;
+    string customs_code = 3;
+    string goods_description = 4;
+    string value = 5;
+    string currency = 6;
+    string customs_duty = 7;
+    string vat_amount = 8;
+    string total_taxes = 9;
+    string status = 10;
+    string issue_date = 11;
+    string expiry_date = 12;
+    string document_url = 13;
+    string created_by = 14;
+}
+
+message GetCustomsDocumentRequest {
+    int64 id = 1;
+}
+
+message ListCustomsDocumentsRequest {
+}
+
+message CustomsDocumentResponse {
+    int64 id = 1;
+    string document_number = 2;
+    string document_type = 3;
+    string customs_code = 4;
+    string goods_description = 5;
+    string value = 6;
+    string currency = 7;
+    string customs_duty = 8;
+    string vat_amount = 9;
+    string total_taxes = 10;
+    string status = 11;
+    string issue_date = 12;
+    string expiry_date = 13;
+    string document_url = 14;
+    string created_by = 15;
+    string created_at = 16;
+    string updated_at = 17;
+}
+
+message ListCustomsDocumentsResponse {
+    repeated CustomsDocumentResponse documents = 1;
+}
+
+message UpdateCustomsDocumentStatusRequest {
+    int64 id = 1;
+    string status = 2;
+}

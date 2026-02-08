@@ -96,9 +96,12 @@ const StepUpAuthModal: React.FC<StepUpAuthModalProps> = ({ isOpen, onSuccess, on
             Authenticate
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
 export default StepUpAuthModal;
+
+
+

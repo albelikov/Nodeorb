@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package com.autonomous.api.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.autonomous.api.grpc";
+option java_outer_classname = "MLBridgeProto";
+
+import "google/protobuf/timestamp.proto";
+
+// ML Bridge service definition
+service MLBridgeService {
+    // Predict mission risk
+    rpc PredictMissionRisk(PredictMissionRiskRequest) returns (PredictMissionRiskResponse);
+    
+    // Predict battery level
+    rpc PredictBatteryLevel(PredictBatteryLevelRequest) returns (PredictBatteryLevelResponse);
+    
+    // Predict energy consumption
+    rpc PredictEnergyConsumption(PredictEnergyConsumptionRequest) returns (PredictEnergyConsumptionResponse);
+    
+    // Predict weather impact
+    rpc PredictWeatherImpact(PredictWeatherImpactRequest) returns (PredictWeatherImpactResponse);
+    
+    // Predict traffic impact
+    rpc PredictTrafficImpact(PredictTrafficImpactRequest) returns (PredictTrafficImpactResponse);
+}
+
+// Predict mission risk request
+message PredictMissionRiskRequest {
+    string mission_id = 1;
+    string mission_type = 2;
+    MissionParameters parameters = 3;
+    repeated Waypoint waypoints = 4;
+    google.protobuf.Timestamp request_time = 5;
+}
+
+// Mission parameters
+message MissionParameters {
+    double max_speed_kmh = 1;
+    double max_altitude_m = 2;
+    double payload_kg = 3;
+    string weather_condition = 4;
+    string risk_level = 5;
+}
+
+// Waypoint
+message Waypoint {
+    string waypoint_id = 1;
+    double latitude = 2;
+    double longitude = 3;
+    double altitude = 4;
+    string waypoint_type = 5;
+}
+
+// Predict mission risk response
+message PredictMissionRiskResponse {
+    string mission_id = 1;
+    string mission_type = 2;
+    double risk_score = 3;
+    string risk_level = 4;
+    string risk_analysis = 5;
+    google.protobuf.Timestamp predicted_at = 6;
+}
+
+// Predict battery level request
+message PredictBatteryLevelRequest {
+    string mission_id = 1;
+    double current_battery_voltage = 2;
+    double payload_kg = 3;
+    repeated Waypoint waypoints = 4;
+    google.protobuf.Timestamp request_time = 5;
+}
+
+// Predict battery level response
+message PredictBatteryLevelResponse {
+    string mission_id = 1;
+    double predicted_battery_voltage = 2;
+    string battery_level = 3;
+    string battery_analysis = 4;
+    google.protobuf.Timestamp predicted_at = 5;
+}
+
+// Predict energy consumption request
+message PredictEnergyConsumptionRequest {
+    string mission_id = 1;
+    double payload_kg = 2;
+    repeated Waypoint waypoints = 3;
+    google.protobuf.Timestamp request_time = 4;
+}
+
+// Predict energy consumption response
+message PredictEnergyConsumptionResponse {
+    string mission_id = 1;
+    double predicted_energy_consumption_wh = 2;
+    string energy_analysis = 3;
+    google.protobuf.Timestamp predicted_at = 4;
+}
+
+// Predict weather impact request
+message PredictWeatherImpactRequest {
+    string mission_id = 1;
+    string weather_condition = 2;
+    repeated Waypoint waypoints = 3;
+    google.protobuf.Timestamp request_time = 4;
+}
+
+// Predict weather impact response
+message PredictWeatherImpactResponse {
+    string mission_id = 1;
+    string weather_condition = 2;
+    double delay_seconds = 3;
+    double energy_increase_percentage = 4;
+    string weather_analysis = 5;
+    google.protobuf.Timestamp predicted_at = 6;
+}
+
+// Predict traffic impact request
+message PredictTrafficImpactRequest {
+    string mission_id = 1;
+    string traffic_condition = 2;
+    repeated Waypoint waypoints = 3;
+    google.protobuf.Timestamp request_time = 4;
+}
+
+// Predict traffic impact response
+message PredictTrafficImpactResponse {
+    string mission_id = 1;
+    string traffic_condition = 2;
+    double delay_seconds = 3;
+    double energy_increase_percentage = 4;
+    string traffic_analysis = 5;
+    google.protobuf.Timestamp predicted_at = 6;
+}

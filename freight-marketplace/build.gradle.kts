@@ -25,15 +25,19 @@ springBoot {
 
 dependencies {
     // Core Dependencies
-    implementation("org.jetbrains.kotlin:kotlin-stdlib")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.0")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.3.0")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+    
+    // SCM Client SDK (temporarily removed)
+    // implementation("com.nodeorb:scmclient:1.0.0")
     
     // Database
     implementation("org.postgresql:postgresql:42.6.0")
@@ -61,9 +65,6 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.8")
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
 tasks.test {
     useJUnitPlatform()
 }

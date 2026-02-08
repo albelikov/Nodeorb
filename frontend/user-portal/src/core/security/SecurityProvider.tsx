@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuthStore } from '../store/useAuthStore';
-import StepUpAuthModal from '../components/StepUpAuthModal';
+import { useAuthStore } from '../../store/useAuthStore';
+import StepUpAuthModal from '../../components/StepUpAuthModal';
 
 interface SecurityContextType {
   isAuthenticated: boolean;

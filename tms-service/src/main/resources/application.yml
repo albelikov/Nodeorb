@@ -70,6 +70,52 @@ nodeorb:
     default-margin: 15
     auto-assign-threshold: 100
 
+# Transport Platform Configuration
+  transport:
+    # Мультимодальные перевозки
+    multimodal:
+      enabled: true
+      modes:
+        - road
+        - rail
+        - air
+        - sea
+        - courier
+      transfer-points:
+        max-hub-size: 100
+        transfer-time-buffer: 3600
+    # Управление договорами
+    contracts:
+      versioning: true
+      approval-workflow: true
+      auto-renewal: false
+      notification-days: 30
+    # Тарифы
+    tariffs:
+      calculation-mode: weight-distance
+      currency: RUB
+      fuel-surcharge-enabled: true
+      fuel-surcharge-adjustment: daily
+    # Интеграции
+    integrations:
+      railway:
+        enabled: true
+        api-url: ${RAILWAY_API_URL}
+      air:
+        enabled: true
+        api-url: ${AIR_API_URL}
+      sea:
+        enabled: true
+        api-url: ${SEA_API_URL}
+    # Последняя миля
+    last-mile:
+      enabled: true
+      providers:
+        - dpd
+        - cdek
+        - russian-post
+      optimization: true
+
 logging:
   level:
     root: INFO

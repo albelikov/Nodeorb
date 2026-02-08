@@ -1,53 +1,111 @@
 plugins {
     kotlin("jvm")
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
-    kotlin("plugin.spring") version "2.0.21"
+    kotlin("plugin.serialization") version "1.9.21"
+    application
+    id("com.google.protobuf")
 }
 
+group = "com.logistics.scm"
+version = "1.0.0"
+
+
 dependencies {
-    // Spring Boot
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    
-    // Database
-    implementation("org.postgresql:postgresql:42.7.2")
-    implementation("org.flywaydb:flyway-core:10.15.1")
+    implementation(Kotlin.stdlib)
+    implementation(Kotlin.reflect)
     
     // gRPC
-    implementation("io.grpc:grpc-spring-boot-starter:6.2.0")
-    implementation("io.grpc:grpc-protobuf:1.60.0")
-    implementation("io.grpc:grpc-stub:1.60.0")
-    implementation("com.google.protobuf:protobuf-java:3.25.1")
+    implementation(Grpc.kotlinStub)
+    implementation(Grpc.protobuf)
+    implementation(Grpc.stub)
+    implementation(Grpc.nettyShaded)
     
-    // OpenAPI
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+    // Exposed ORM
+    implementation("org.jetbrains.exposed:exposed-core:0.47.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.47.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.47.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.47.0")
     
-    // Security & Cryptography
-    implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
-    implementation("org.bouncycastle:bcpkix-jdk18on:1.78.1")
+    // Database drivers
+    implementation(Database.postgresql)
     
-    // Kafka
-    implementation("org.springframework.kafka:spring-kafka:3.2.2")
+    // ClickHouse integration (temporarily removed)
+    // implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.4.6")
     
-    // ClickHouse
-    implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.6.3")
+    // Kafka integration
+    implementation(Kafka.clients)
     
-    // OPA Integration
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.1")
+    // JSON processing
+    implementation(Utils.jacksonDatabind)
+    implementation(Utils.jacksonKotlin)
     
-    // Utilities
-    implementation("org.apache.commons:commons-lang3:3.15.0")
-    implementation("commons-codec:commons-codec:1.17.0")
+    // Statistical analysis
+    implementation("org.apache.commons:commons-math3:3.6.1")
     
-    // Kotlin
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    // Logging
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+    implementation(Logging.slf4j)
+    
+    // Testing
+    testImplementation(kotlin("test"))
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${Versions.kotlin}")
+    testImplementation(Testing.junit)
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${Versions.junitJupiter}")
+}
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.springframework.kafka:spring-kafka-test:3.2.2")
+tasks.test {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(25)
+}
+
+application {
+    mainClass.set("com.logistics.scm.ApplicationKt")
+}
+
+// Generate gRPC code from proto files
+protobuf {
+    protoc {
+        artifact = Protobuf.protoc
+    }
+    plugins {
+        create("grpc") {
+            artifact = Protobuf.grpcJava
+        }
+        create("grpckt") {
+            artifact = Protobuf.grpcKotlin
+        }
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.plugins {
+                create("grpc")
+                create("grpckt")
+            }
+        }
+    }
+}
+
+sourceSets {
+    main {
+        proto {
+            srcDir("api/grpc")
+        }
+        java {
+            srcDirs("build/generated/source/proto/main/grpc")
+            srcDirs("build/generated/source/proto/main/grpckt")
+            srcDirs("build/generated/source/proto/main/java")
+        }
+    }
+}
+
+tasks.register<Jar>("fatJar") {
+    archiveClassifier.set("fat")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    from(sourceSets.main.get().output)
+    manifest {
+        attributes["Main-Class"] = application.mainClass
+    }
 }

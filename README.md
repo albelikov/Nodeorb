@@ -49,10 +49,7 @@ Blockchain-платформа для сопоставления грузов и 
 ### 9. tms-service - Управление транспортом
 Планирование маршрутов с учетом геоограничений
 
-### 10. transport-platform - Транспортная платформа
-Управление мультимодальными перевозками
-
-### 11. wms-service - Управление складом
+### 10. wms-service - Управление складом
 Складские операции с YMS и обратной логистикой
 
 ## Сборка и запуск
@@ -69,49 +66,63 @@ cd service-name && ./gradlew bootRun
 
 ### Запуск в Docker
 
-#### Основная система
-```bash
-# Запустить всю основную систему (SCM, OMS, WMS, FMS, TMS, Admin)
-docker-compose up -d
+#### Последовательный запуск с профилями
 
-# Проверить статус
+Создан новый оптимизированный стек с профилями и проверкой готовности контейнеров:
+
+```bash
+# Запустить только инфраструктуру (Postgres, Redis, Keycloak, EMQX, Elasticsearch, Kibana, Grafana, Prometheus, Zipkin)
+docker-compose --profile infra up -d
+
+# Запустить только сервисы (после готовности инфраструктуры)
+docker-compose --profile services up -d
+
+# Запустить только Freight Marketplace
+docker-compose --profile marketplace up -d
+
+# Запустить полный стек сразу
+docker-compose --profile all up -d
+
+# Проверить статус контейнеров
 docker-compose ps
 
 # Просмотреть логи
 docker-compose logs -f
+
+# Остановить стек
+docker-compose down
 ```
 
-#### Freight Marketplace
+#### Доступные профили
+
+| Профиль          | Содержимое                                                                 |
+|-------------------|-----------------------------------------------------------------------------|
+| `infra`           | Postgres (с PostGIS), Redis, Keycloak, pgAdmin, EMQX, Elasticsearch, Kibana, Grafana, Prometheus, Zipkin |
+| `services`        | SCM, OMS, WMS, FMS, TMS, Autonomous Ops, Customs Service, Admin Backend    |
+| `marketplace`     | Freight Marketplace с отдельной БД Postgres                                  |
+| `all`             | Все сервисы и инфраструктура (инфра + сервисы + marketplace)                 |
+
+#### Пример запуска
+
 ```bash
-# Запустить marketplace отдельно
-docker-compose -f docker-compose.marketplace.yml up -d
+# Запустить инфраструктуру и дождаться готовности
+docker-compose --profile infra up -d
 
-# Проверить статус marketplace
-docker-compose -f docker-compose.marketplace.yml ps
+# Проверить статус инфраструктуры
+docker-compose ps
 
-# Просмотреть логи marketplace
-docker-compose -f docker-compose.marketplace.yml logs -f
+# Запустить сервисы
+docker-compose --profile services up -d
 ```
 
-#### Отдельные сервисы
+#### Freight Marketplace отдельно
+
 ```bash
-# Запустить только SCM
-docker-compose up scm-service
+# Запустить только Freight Marketplace
+docker-compose --profile marketplace up -d
 
-# Запустить только OMS
-docker-compose up oms-service
-
-# Запустить только WMS
-docker-compose up wms-service
-
-# Запустить только FMS
-docker-compose up fms-service
-
-# Запустить только TMS
-docker-compose up tms-service
-
-# Запустить только Admin Backend
-docker-compose up admin-backend
+# Проверить статус
+docker-compose ps
 ```
 
 ## Требования к безопасности
@@ -143,7 +154,7 @@ docker-compose up admin-backend
 - Kubernetes 1.25+
 - Docker 20.10+
 - Java 17+
-- PostgreSQL 14+
+- PostgreSQL 18+
 - Apache Kafka 3.0+
 
 ## Разработка

@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package com.autonomous.api.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.autonomous.api.grpc";
+option java_outer_classname = "PredictiveMaintenanceProto";
+
+message PredictiveMaintenanceRequest {
+    string vehicleId = 1;
+    repeated SensorData sensorData = 2;
+}
+
+message SensorData {
+    int64 timestamp = 1;
+    double temperature = 2;
+    double vibration = 3;
+    double pressure = 4;
+}
+
+message PredictiveMaintenanceResponse {
+    string vehicleId = 1;
+    double failureProbability = 2;
+    string nextMaintenance = 3;
+    string recommendedAction = 4;
+}
+
+service PredictiveMaintenanceService {
+    rpc GetPredictiveMaintenance(PredictiveMaintenanceRequest) returns (PredictiveMaintenanceResponse);
+}

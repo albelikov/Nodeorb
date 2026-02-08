@@ -1,0 +1,13 @@
+admin-backend  
+admin-frontend  
+autonomous-ops  
+customs-service  
+fms-service  
+freight-marketplace  
+frontend/site  
+frontend/user-portal  
+oms-service  
+pkg/scmclient  
+scm-service  
+tms-service  
+wms-service 

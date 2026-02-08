@@ -1,0 +1,332 @@
+---
+title: Autonomous Ops - ERD
+---
+erDiagram
+    MISSIONS {
+        bigint id PK
+        varchar mission_id
+        varchar type
+        varchar priority
+        varchar status
+        jsonb origin
+        jsonb destination
+        jsonb waypoints
+        jsonb payload
+        jsonb constraints
+        timestamp created_at
+        timestamp updated_at
+        timestamp scheduled_start_time
+        timestamp actual_start_time
+        timestamp completed_at
+        varchar assigned_node_id
+        varchar created_by
+        varchar approved_by
+    }
+
+    TASKS {
+        bigint id PK
+        varchar task_id
+        bigint mission_id FK
+        varchar type
+        int sequence
+        varchar status
+        jsonb location
+        varchar action
+        bigint duration
+        jsonb dependencies
+        timestamp started_at
+        timestamp completed_at
+    }
+
+    NODE_PROFILES {
+        bigint id PK
+        varchar node_id
+        varchar name
+        varchar type
+        varchar model
+        varchar status
+        jsonb capabilities
+        jsonb hardware_specs
+        jsonb current_location
+        double precision battery_level
+        varchar current_mission_id
+        bigint operational_hours
+        timestamp last_maintenance_date
+        timestamp next_maintenance_date
+        jsonb cost_parameters
+        timestamp created_at
+        timestamp updated_at
+        boolean is_active
+    }
+
+    MISSION_PLANS {
+        bigint id PK
+        varchar plan_id
+        bigint mission_id FK
+        int version
+        varchar status
+        jsonb route
+        double precision total_cost
+        jsonb cost_breakdown
+        bigint estimated_duration
+        timestamp estimated_start_time
+        timestamp estimated_end_time
+        jsonb risk_assessment
+        jsonb alternatives
+        jsonb explanation
+        timestamp created_at
+        varchar created_by
+        timestamp approved_at
+        varchar approved_by
+    }
+
+    MISSION_EXECUTION_STATUS {
+        bigint id PK
+        varchar mission_id
+        varchar node_id
+        varchar current_status
+        varchar current_task_id
+        jsonb current_location
+        double precision current_altitude
+        double precision current_speed
+        double precision current_heading
+        double precision progress_percentage
+        int completed_tasks
+        int total_tasks
+        double precision battery_level
+        double precision estimated_remaining_range
+        jsonb deviation_from_plan
+        jsonb active_alerts
+        timestamp last_updated
+    }
+
+    COST_PARAMETERS {
+        bigint id PK
+        varchar parameter_id
+        varchar region
+        timestamp valid_from
+        timestamp valid_until
+        double precision electricity_price_per_kwh
+        double precision fuel_price_per_liter
+        double precision battery_swap_cost
+        double precision operator_hourly_rate
+        double precision technician_hourly_rate
+        double precision supervision_cost_per_mission
+        double precision penalty_per_minute_delay
+        jsonb priority_multiplier
+        double precision repair_cost_estimate
+        double precision insurance_premium
+        double precision liability_cost_per_incident
+        varchar created_by
+        varchar approved_by
+    }
+
+    A2A_NEGOTIATIONS {
+        bigint id PK
+        varchar negotiation_id
+        varchar resource_type
+        varchar resource_id
+        varchar initiator_node_id
+        jsonb participant_node_ids
+        jsonb bids
+        varchar winner
+        timestamp started_at
+        timestamp completed_at
+        varchar status
+    }
+
+    AI_DECISION_LOGS {
+        bigint id PK
+        varchar decision_id
+        timestamp timestamp
+        varchar decision_type
+        varchar context
+        varchar input_data
+        varchar decision
+        double precision confidence
+        varchar alternatives
+        varchar reasoning
+        varchar influencing_factors
+        varchar actual_outcome
+        boolean was_correct
+    }
+
+    ALERTS {
+        bigint id PK
+        varchar alert_id
+        varchar mission_id
+        varchar node_id
+        varchar type
+        varchar severity
+        varchar message
+        varchar details
+        timestamp triggered_at
+        timestamp acknowledged_at
+        varchar acknowledged_by
+        timestamp resolved_at
+        varchar recommended_action
+        boolean auto_resolved
+    }
+
+    TELEMETRY_DATA {
+        bigint id PK
+        varchar node_id
+        timestamp timestamp
+        double precision latitude
+        double precision longitude
+        double precision altitude
+        double precision speed
+        double precision heading
+        double precision battery_voltage
+        double precision battery_current
+        double precision battery_percentage
+        double precision temperature
+        double precision vibration
+        double precision pressure
+        int gps_quality
+        int communication_signal
+        varchar raw_sensor_data
+    }
+
+    MISSION_PERFORMANCE_METRICS {
+        bigint id PK
+        varchar mission_id
+        varchar node_id
+        bigint planned_duration
+        bigint actual_duration
+        bigint duration_deviation
+        double precision planned_cost
+        double precision actual_cost
+        double precision cost_deviation
+        double precision cost_savings
+        double precision energy_efficiency
+        double precision route_efficiency
+        double precision success_rate
+        double precision accuracy_score
+        double precision ai_decision_accuracy
+        int replans_count
+        timestamp completed_at
+    }
+
+    NODE_ANALYTICS {
+        bigint id PK
+        varchar node_id
+        timestamp period_start
+        timestamp period_end
+        int total_missions
+        int successful_missions
+        int failed_missions
+        int aborted_missions
+        bigint total_flight_time
+        double precision total_distance
+        double precision total_energy_consumed
+        double precision total_revenue
+        double precision total_costs
+        double precision profit_margin
+        bigint mtbf
+        double precision uptime
+        timestamp predicted_next_failure
+        double precision health_score
+    }
+
+    OPTIMIZATION_SCENARIOS {
+        bigint id PK
+        varchar scenario_id
+        varchar type
+        jsonb parameters
+        int iterations
+        jsonb results
+        timestamp created_at
+    }
+
+    SWARM_MISSIONS {
+        bigint id PK
+        varchar swarm_mission_id
+        jsonb participating_nodes
+        varchar coordination_type
+        varchar leader_node_id
+        varchar shared_world_model
+        varchar status
+        timestamp created_at
+        timestamp completed_at
+    }
+
+    AIRSPACE_RESTRICTIONS {
+        bigint id PK
+        varchar restriction_id
+        varchar type
+        varchar geometry
+        double precision min_altitude
+        double precision max_altitude
+        timestamp valid_from
+        timestamp valid_until
+        varchar reason
+        varchar severity
+        varchar source
+        boolean is_active
+    }
+
+    TRAFFIC_DATA {
+        bigint id PK
+        jsonb location
+        timestamp timestamp
+        varchar traffic_density
+        double precision average_speed
+        jsonb incidents
+        varchar source
+    }
+
+    WEATHER_CONDITIONS {
+        bigint id PK
+        jsonb location
+        timestamp timestamp
+        double precision temperature
+        double precision wind_speed
+        double precision wind_direction
+        double precision visibility
+        double precision precipitation
+        double precision humidity
+        double precision pressure
+        double precision cloud_cover
+        varchar conditions
+        varchar severity
+        varchar source
+        int forecast_hours
+    }
+
+    INDUSTRY_PRESETS {
+        bigint id PK
+        varchar name
+        varchar description
+        bigint cost_parameters_id FK
+        jsonb recommended_sensors
+        jsonb typical_mission_types
+        varchar safety_level
+        boolean is_active
+    }
+
+    MISSIONS ||--o{ TASKS : contains
+    MISSIONS ||--o{ MISSION_PLANS : has
+    MISSIONS ||--o{ ALERTS : generates
+    MISSIONS ||--o{ MISSION_EXECUTION_STATUS : tracks
+    MISSIONS ||--o{ MISSION_PERFORMANCE_METRICS : measures
+
+    NODE_PROFILES ||--o{ MISSIONS : executes
+    NODE_PROFILES ||--o{ TELEMETRY_DATA : provides
+    NODE_PROFILES ||--o{ NODE_ANALYTICS : analyzes
+
+    COST_PARAMETERS ||--|| INDUSTRY_PRESETS : uses
+
+    MISSION_PLANS ||--o{ OPTIMIZATION_SCENARIOS : includes
+
+    MISSION_EXECUTION_STATUS ||--o{ ALERTS : triggers
+
+    TELEMETRY_DATA ||--o{ NODE_ANALYTICS : feeds
+
+    NODE_ANALYTICS ||--o{ WEATHER_CONDITIONS : affected_by
+
+    AIRSPACE_RESTRICTIONS ||--o{ MISSION_PLANS : affects
+
+    TRAFFIC_DATA ||--o{ MISSION_PLANS : affects
+
+    WEATHER_CONDITIONS ||--o{ MISSION_PLANS : affects

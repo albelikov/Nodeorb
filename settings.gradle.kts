@@ -18,7 +18,9 @@ dependencyResolutionManagement {
 rootProject.name = "nodeorb"
 
 include(
-    "admin-backend", "admin-frontend", "autonomous-ops", "customs-service",
+    "admin-backend", "autonomous-ops", "customs-service",
     "fms-service", "freight-marketplace", "oms-service",
-    "scm-service", "tms-service", "transport-platform", "wms-service"
+    "scm-service", "tms-service", "wms-service", "finance-legal-service",
+    "shared-domain", "pkg:scmclient"
 )
+project(":pkg:scmclient").name = "scmclient"

@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: finance-legal-service
+  labels:
+    app: finance-legal-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: finance-legal-service
+  template:
+    metadata:
+      labels:
+        app: finance-legal-service
+    spec:
+      containers:
+      - name: finance-legal-service
+        image: nodeorb/finance-legal-service:1.0.0
+        ports:
+        - containerPort: 50055
+        env:
+        - name: DATABASE_URL
+          value: "jdbc:postgresql://postgres:5432/nodeorb"
+        - name: DATABASE_USER
+          value: "postgres"
+        - name: DATABASE_PASSWORD
+          value: "postgres"
+        - name: KAFKA_BOOTSTRAP_SERVERS
+          value: "kafka:9092"
+        - name: GRPC_SERVER_PORT
+          value: "50055"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          tcpSocket:
+            port: 50055
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          tcpSocket:
+            port: 50055
+          initialDelaySeconds: 30
+          periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: finance-legal-service
+  labels:
+    app: finance-legal-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 50055
+    targetPort: 50055
+    name: grpc
+  selector:
+    app: finance-legal-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: finance-legal-service-config
+data:
+  application.conf: |
+    # Finance-Legal Service Configuration
+    server {
+        port = 50055
+    }
+    
+    database {
+        url = "jdbc:postgresql://postgres:5432/nodeorb"
+        user = "postgres"
+        password = "postgres"
+        driver = "org.postgresql.Driver"
+    }
+    
+    kafka {
+        bootstrap.servers = "kafka:9092"
+    }
+    
+    grpc {
+        server {
+            port = 50055
+        }
+    }

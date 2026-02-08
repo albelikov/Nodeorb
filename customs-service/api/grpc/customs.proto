@@ -1,0 +1,207 @@
+syntax = "proto3";
+
+package com.logistics.customs;
+
+option java_multiple_files = true;
+option java_package = "com.logistics.customs";
+option java_outer_classname = "CustomsProto";
+
+service CustomsService {
+    // Declaration operations
+    rpc CreateDeclaration(CreateDeclarationRequest) returns (DeclarationResponse);
+    rpc GetDeclaration(GetDeclarationRequest) returns (DeclarationResponse);
+    rpc UpdateDeclaration(UpdateDeclarationRequest) returns (DeclarationResponse);
+    rpc ListDeclarations(ListDeclarationsRequest) returns (ListDeclarationsResponse);
+    
+    // Document operations
+    rpc CreateDocument(CreateDocumentRequest) returns (DocumentResponse);
+    rpc GetDocument(GetDocumentRequest) returns (DocumentResponse);
+    rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse);
+    
+    // Payment operations
+    rpc CreatePayment(CreatePaymentRequest) returns (PaymentResponse);
+    rpc GetPayment(GetPaymentRequest) returns (PaymentResponse);
+    rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
+    
+    // Goods classification operations
+    rpc CreateGoodsClassification(CreateGoodsClassificationRequest) returns (GoodsClassificationResponse);
+    rpc GetGoodsClassification(GetGoodsClassificationRequest) returns (GoodsClassificationResponse);
+    rpc ListGoodsClassifications(ListGoodsClassificationsRequest) returns (ListGoodsClassificationsResponse);
+}
+
+// Declaration messages
+message CreateDeclarationRequest {
+    string declaration_number = 1;
+    string shipper_id = 2;
+    string consignee_id = 3;
+    string order_id = 4;
+    string goods = 5;
+    string total_value = 6;
+    string customs_procedure = 7;
+    string status = 8;
+}
+
+message GetDeclarationRequest {
+    string id = 1;
+}
+
+message UpdateDeclarationRequest {
+    string id = 1;
+    string declaration_number = 2;
+    string shipper_id = 3;
+    string consignee_id = 4;
+    string order_id = 5;
+    string goods = 6;
+    string total_value = 7;
+    string customs_procedure = 8;
+    string status = 9;
+}
+
+message ListDeclarationsRequest {
+    int32 page_number = 1;
+    int32 page_size = 2;
+}
+
+message DeclarationResponse {
+    string id = 1;
+    string declaration_number = 2;
+    string shipper_id = 3;
+    string consignee_id = 4;
+    string order_id = 5;
+    string goods = 6;
+    string total_value = 7;
+    string customs_procedure = 8;
+    string status = 9;
+    string created_at = 10;
+    string updated_at = 11;
+}
+
+message ListDeclarationsResponse {
+    repeated DeclarationResponse declarations = 1;
+    int32 total_pages = 2;
+    int32 total_items = 3;
+}
+
+// Document messages
+message CreateDocumentRequest {
+    string declaration_id = 1;
+    string document_type = 2;
+    string document_number = 3;
+    string document_date = 4;
+    string file_url = 5;
+    string status = 6;
+}
+
+message GetDocumentRequest {
+    string id = 1;
+}
+
+message ListDocumentsRequest {
+    int32 page_number = 1;
+    int32 page_size = 2;
+    string declaration_id = 3;
+}
+
+message DocumentResponse {
+    string id = 1;
+    string declaration_id = 2;
+    string document_type = 3;
+    string document_number = 4;
+    string document_date = 5;
+    string file_url = 6;
+    string status = 7;
+    string created_at = 8;
+    string updated_at = 9;
+}
+
+message ListDocumentsResponse {
+    repeated DocumentResponse documents = 1;
+    int32 total_pages = 2;
+    int32 total_items = 3;
+}
+
+// Payment messages
+message CreatePaymentRequest {
+    string declaration_id = 1;
+    string payment_number = 2;
+    string amount = 3;
+    string payment_date = 4;
+    string payment_method = 5;
+    string status = 6;
+}
+
+message GetPaymentRequest {
+    string id = 1;
+}
+
+message ListPaymentsRequest {
+    int32 page_number = 1;
+    int32 page_size = 2;
+    string declaration_id = 3;
+}
+
+message PaymentResponse {
+    string id = 1;
+    string declaration_id = 2;
+    string payment_number = 3;
+    string amount = 4;
+    string payment_date = 5;
+    string payment_method = 6;
+    string status = 7;
+    string created_at = 8;
+    string updated_at = 9;
+}
+
+message ListPaymentsResponse {
+    repeated PaymentResponse payments = 1;
+    int32 total_pages = 2;
+    int32 total_items = 3;
+}
+
+// Goods classification messages
+message CreateGoodsClassificationRequest {
+    string declaration_id = 1;
+    string product_code = 2;
+    string product_name = 3;
+    int32 quantity = 4;
+    string unit = 5;
+    string value = 6;
+    string tnved_code = 7;
+    string country_of_origin = 8;
+    string country_of_destination = 9;
+    string customs_tariff = 10;
+    string vat_rate = 11;
+}
+
+message GetGoodsClassificationRequest {
+    string id = 1;
+}
+
+message ListGoodsClassificationsRequest {
+    int32 page_number = 1;
+    int32 page_size = 2;
+    string declaration_id = 3;
+}
+
+message GoodsClassificationResponse {
+    string id = 1;
+    string declaration_id = 2;
+    string product_code = 3;
+    string product_name = 4;
+    int32 quantity = 5;
+    string unit = 6;
+    string value = 7;
+    string tnved_code = 8;
+    string country_of_origin = 9;
+    string country_of_destination = 10;
+    string customs_tariff = 11;
+    string vat_rate = 12;
+    string created_at = 13;
+    string updated_at = 14;
+}
+
+message ListGoodsClassificationsResponse {
+    repeated GoodsClassificationResponse classifications = 1;
+    int32 total_pages = 2;
+    int32 total_items = 3;
+}

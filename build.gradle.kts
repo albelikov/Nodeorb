@@ -7,7 +7,15 @@ plugins {
 allprojects {
     group = "com.nodeorb"
     version = "0.1.0-SNAPSHOT"
-    // Репозитории отсюда УДАЛЕНЫ
+    
+    // Configure Java toolchain for JDK 25
+    plugins.withType<JavaPlugin> {
+        extensions.configure<JavaPluginExtension> {
+            toolchain {
+                languageVersion.set(JavaLanguageVersion.of(25))
+            }
+        }
+    }
 }
 
 tasks.register("cleanAll") {
